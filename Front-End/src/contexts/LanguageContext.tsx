@@ -70,9 +70,12 @@ const translations = {
     'cart.add_to_cart': 'Add to Cart',
     'cart.adding': 'Adding...',
     
-    // Categories
+    // Categories - FIXED MISSING TRANSLATIONS
     'categories.loading': 'Loading categories...',
     'categories.no_categories': 'No categories available.',
+    'categories.browse_categories': 'BROWSE BY CATEGORIES',
+    'categories.discover_products': 'Discover our wide range of products organized by category',
+    'categories.view_all': 'View All Categories',
     
     // Home
     'home.new_arrivals': 'NEW ARRIVALS',
@@ -374,6 +377,9 @@ const translations = {
     // Categories
     'categories.loading': 'Birimo gutangura amatsinda...',
     'categories.no_categories': 'Nta matsinda ahari.',
+    'categories.browse_categories': 'SHAKISHA HAKURIKIJWE AMATSINDA',
+    'categories.discover_products': 'Menya ibicuruzwa bitandukanye byateguwe hakurikijwe amatsinda',
+    'categories.view_all': 'Reba Amatsinda Yose',
     
     // Home
     'home.new_arrivals': 'IBICURUZWA BISHYA',
@@ -637,6 +643,13 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
 
   const t = (key: string, params?: Record<string, any>): string => {
     let translation = translations[language][key] || translations['en'][key] || key;
+    
+    // Fallback for missing translations
+    if (translation === key) {
+      console.warn(`Missing translation for key: ${key}`);
+      // Return a readable version of the key
+      return key.split('.').pop()?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || key;
+    }
     
     if (params) {
       Object.keys(params).forEach(param => {

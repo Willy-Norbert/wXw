@@ -328,3 +328,88 @@ export const sendOrderStatusUpdateEmail = async (toEmail, status, productName) =
     throw error;
   }
 };
+
+// Send Delivery Status Update Email
+export const sendDeliveryStatusUpdateEmail = async ({
+  customerEmail,
+  customerName,
+  orderNumber,
+  productNames,
+  deliveryStatus,
+  updateDateTime,
+  orderViewLink
+}) => {
+  try {
+    const transporter = nodemailer.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: customerEmail,
+      subject: `Delivery Status Update - Order #${orderNumber}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #7c3aed; margin: 0;">WomXchange Rwanda</h1>
+              <p style="color: #666; margin: 10px 0 0 0;">Delivery Status Update</p>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #333; margin: 0 0 15px 0;">Hello ${customerName || 'Valued Customer'},</h2>
+              <p style="color: #666; line-height: 1.6; margin: 0;">
+                Your order delivery status has been updated. Here are the details:
+              </p>
+            </div>
+            
+            <div style="background-color: #fff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
+              <div style="background-color: #7c3aed; color: white; padding: 15px; font-weight: bold;">
+                Order Information
+              </div>
+              <div style="padding: 15px;">
+                <p style="margin: 0 0 10px 0;"><strong>Order Number:</strong> ${orderNumber}</p>
+                <p style="margin: 0 0 10px 0;"><strong>Product(s):</strong> ${productNames.join(', ')}</p>
+                <p style="margin: 0 0 10px 0;"><strong>Delivery Status:</strong> 
+                  <span style="color: ${deliveryStatus === 'Delivered' ? '#16a34a' : '#dc2626'}; font-weight: bold;">
+                    ${deliveryStatus}
+                  </span>
+                </p>
+                <p style="margin: 0;"><strong>Updated:</strong> ${updateDateTime.toLocaleString()}</p>
+              </div>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${orderViewLink}" style="background-color: #7c3aed; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                View Order Details
+              </a>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px;">
+              <p style="color: #666; margin: 0; font-size: 14px; text-align: center;">
+                Thank you for shopping with WomXchange Rwanda!<br>
+                Supporting women entrepreneurs across Rwanda.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #999; font-size: 12px; margin: 0;">
+                © 2024 WomXchange Rwanda. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('📧 Delivery status update email sent successfully to:', customerEmail);
+  } catch (error) {
+    console.error('❌ Error sending delivery status update email:', error);
+    throw error;
+  }
+};

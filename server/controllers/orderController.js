@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import prisma from '../prismaClient.js';
 import { notify } from '../utils/notify.js';
-import { sendOrderConfirmationEmail, sendAdminOrderNotification, sendOrderStatusUpdateEmail, sendPaymentConfirmationEmail } from '../utils/emailService.js';
+import { sendOrderConfirmationEmail, sendAdminOrderNotification, sendOrderStatusUpdateEmail, sendPaymentConfirmationEmail, sendDeliveryStatusUpdateEmail } from '../utils/emailService.js';
 
 // Get Order by ID (Admin/Seller)
 export const getOrderById = asyncHandler(async (req, res) => {
@@ -695,7 +695,7 @@ export const deleteOrder = asyncHandler(async (req, res) => {
   res.json({ message: 'Order deleted successfully' });
 });
 
-// Update Order Status (Admin/Seller) - FIXED EMAIL SENDING
+// Update Order Status (Admin/Seller) - ENHANCED WITH DELIVERY EMAIL
 export const updateOrderStatus = asyncHandler(async (req, res) => {
   const orderId = parseInt(req.params.id);
   const { isPaid, isDelivered, status } = req.body;
@@ -775,14 +775,27 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     }
   });
 
-  // FIXED: Send email notification to customer about status change
+  // ENHANCED: Send email notification for delivery status changes
   const customerEmail = order.user?.email || order.customerEmail;
   const customerName = order.user?.name || order.customerName;
   
-  if (customerEmail && (isDelivered !== undefined || status !== undefined || isPaid !== undefined)) {
+  if (customerEmail) {
     try {
+      // If delivery status changed, send delivery status email
+      if (isDelivered !== undefined) {
+        await sendDeliveryStatusUpdateEmail({
+          customerEmail,
+          customerName,
+          orderNumber: order.orderNumber,
+          productNames: order.items.map(item => item.product.name),
+          deliveryStatus: isDelivered ? 'Delivered' : 'Not Delivered',
+          updateDateTime: new Date(),
+          orderViewLink: `${process.env.FRONTEND_URL}/orders/${orderId}`
+        });
+        console.log('📧 Delivery status email sent to:', customerEmail);
+      }
       // If order is confirmed as paid, send payment confirmation email
-      if (isPaid === true) {
+      else if (isPaid === true) {
         await sendPaymentConfirmationEmail({
           customerEmail,
           customerName,
