@@ -23,34 +23,68 @@ const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [sortBy, setSortBy] = useState('name');
 
-  // Get category filter from URL parameters
+  // Get category filter from URL parameters - FIXED
   useEffect(() => {
     const categoryParam = searchParams.get('category');
+    console.log('🔍 Products page - URL category param:', categoryParam);
+    
     if (categoryParam) {
       setSelectedCategory(categoryParam);
+      console.log('✅ Set selected category from URL:', categoryParam);
+    } else {
+      setSelectedCategory('');
+      console.log('📝 No category in URL, cleared selection');
     }
   }, [searchParams]);
 
   const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
     queryKey: ['products'],
-    queryFn: getProducts
+    queryFn: async () => {
+      console.log('📦 Fetching products...');
+      const response = await getProducts();
+      console.log('✅ Products fetched:', response.data?.data?.length || response.data?.length || 0);
+      return response;
+    }
   });
 
   const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
     queryKey: ['categories'],
-    queryFn: getCategories
+    queryFn: async () => {
+      console.log('📂 Fetching categories...');
+      const response = await getCategories();
+      console.log('✅ Categories fetched:', response.data?.data?.length || response.data?.length || 0);
+      return response;
+    }
   });
 
-  const products = productsData?.data || [];
-  const categories = categoriesData?.data || [];
+  // FIXED: Handle both response formats properly
+  const products = productsData?.data?.data || productsData?.data || [];
+  const categories = categoriesData?.data?.data || categoriesData?.data || [];
 
-  // Filter and sort products based on current filters
+  console.log('📊 Products page render:', {
+    totalProducts: products.length,
+    totalCategories: categories.length,
+    selectedCategory,
+    searchTerm
+  });
+
+  // Filter and sort products based on current filters - FIXED CATEGORY FILTERING
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
+    // FIXED: Proper category matching
     const matchesCategory = !selectedCategory || 
-                           product.categoryId.toString() === selectedCategory;
+                           product.categoryId?.toString() === selectedCategory ||
+                           product.category?.id?.toString() === selectedCategory;
+    
+    console.log('🔍 Product filter check:', {
+      productName: product.name,
+      productCategoryId: product.categoryId,
+      selectedCategory,
+      matchesCategory,
+      matchesSearch
+    });
     
     return matchesSearch && matchesCategory;
   }).sort((a, b) => {
@@ -67,18 +101,24 @@ const Products = () => {
     }
   });
 
- const handleCategoryChange = (categoryId: string) => {
-  if (categoryId === 'all') {
-    setSelectedCategory('');
-    setSearchParams({});
-  } else {
-    setSelectedCategory(categoryId);
-    setSearchParams({ category: categoryId });
-  }
-};
+  console.log('📋 Filtered products:', filteredProducts.length);
 
+  const handleCategoryChange = (categoryId: string) => {
+    console.log('🔄 Category change:', categoryId);
+    
+    if (categoryId === 'all') {
+      setSelectedCategory('');
+      setSearchParams({});
+      console.log('✅ Cleared category filter');
+    } else {
+      setSelectedCategory(categoryId);
+      setSearchParams({ category: categoryId });
+      console.log('✅ Set category filter:', categoryId);
+    }
+  };
 
   const handleAddToCart = (productId: number) => {
+    console.log('🛒 Adding product to cart:', productId);
     addToCart({ productId, quantity: 1 });
   };
 
@@ -95,6 +135,7 @@ const Products = () => {
   }
 
   if (productsError) {
+    console.error('❌ Products error:', productsError);
     return (
       <div className="min-h-screen bg-white">
         <Header />
@@ -133,30 +174,29 @@ const Products = () => {
           </div>
 
           <div className="flex space-x-4">
-            {/* Category Filter */}
+            {/* Category Filter - FIXED */}
             <Select
-            value={selectedCategory}
-            onValueChange={(value) => handleCategoryChange(value)}
-          >
-            <SelectTrigger className="w-48 bg-gray-50 border-gray-200">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories
-                .filter((category) => category?.id && category?.name) // Defensive: filter valid categories
-                .map((category) => (
-                  <SelectItem
-                    key={category.id}
-                    value={category.id.toString()}
-                  >
-                    {category.name}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-
+              value={selectedCategory}
+              onValueChange={(value) => handleCategoryChange(value)}
+            >
+              <SelectTrigger className="w-48 bg-gray-50 border-gray-200">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories
+                  .filter((category) => category?.id && category?.name) // Defensive: filter valid categories
+                  .map((category) => (
+                    <SelectItem
+                      key={category.id}
+                      value={category.id.toString()}
+                    >
+                      {category.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
 
             {/* Sort */}
             <Select value={sortBy} onValueChange={setSortBy}>
@@ -180,7 +220,7 @@ const Products = () => {
               <Badge variant="secondary" className="px-3 py-1">
                 Category: {categories.find(c => c.id.toString() === selectedCategory)?.name}
                 <button
-                  onClick={() => handleCategoryChange('')}
+                  onClick={() => handleCategoryChange('all')}
                   className="ml-2 text-gray-500 hover:text-gray-700"
                 >
                   ×
@@ -204,6 +244,11 @@ const Products = () => {
         {/* Results Info */}
         <div className="mb-6 text-gray-600">
           Showing {filteredProducts.length} of {products.length} products
+          {selectedCategory && (
+            <span className="ml-2 text-purple-600">
+              in {categories.find(c => c.id.toString() === selectedCategory)?.name}
+            </span>
+          )}
         </div>
 
         {/* Products Grid */}

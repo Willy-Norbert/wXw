@@ -98,7 +98,7 @@ export const confirmClientPayment = asyncHandler(async (req, res) => {
   res.json({ message: 'Payment marked as completed. Awaiting admin confirmation.' });
 });
 
-// Admin Confirms Payment - FIXED CART CLEARING
+// Admin Confirms Payment - FIXED EMAIL SENDING AND CART CLEARING
 export const confirmPaymentByAdmin = asyncHandler(async (req, res) => {
   const orderId = Number(req.params.orderId);
   const order = await prisma.order.findUnique({
@@ -124,15 +124,18 @@ export const confirmPaymentByAdmin = asyncHandler(async (req, res) => {
     },
   });
 
-  // 📧 Send payment confirmation email
+  // 📧 Send payment confirmation email - FIXED TO HANDLE ALL CASES
   try {
     const { sendPaymentConfirmationEmail } = await import('../utils/emailService.js');
 
+    // Get customer email - check multiple sources
     const customerEmail = order.customerEmail || order.user?.email;
     const customerName = order.customerName || order.user?.name || 'Valued Customer';
 
+    console.log(`📧 Attempting to send confirmation email to: ${customerEmail} for order ${orderId}`);
+
     if (!customerEmail) {
-      console.warn(`⚠️ No email found for Order ID ${orderId}. Email not sent.`);
+      console.warn(`⚠️ No email found for Order ID ${orderId}. Customer email: ${order.customerEmail}, User email: ${order.user?.email}`);
     } else {
       await sendPaymentConfirmationEmail({
         customerEmail,
@@ -143,15 +146,15 @@ export const confirmPaymentByAdmin = asyncHandler(async (req, res) => {
         shippingAddress: order.shippingAddress,
         paymentCode: order.paymentCode
       });
-      console.log(`📧 Payment confirmation email sent to: ${customerEmail}`);
+      console.log(`✅ Payment confirmation email sent successfully to: ${customerEmail}`);
     }
   } catch (emailError) {
-    console.error('❌ Email send error:', emailError);
+    console.error('❌ Email send error:', emailError.message);
   }
 
-  // 🧹 Clear cart for logged-in user only - FIXED NULL HANDLING
+  // 🧹 Clear cart ONLY for authenticated users - FIXED NULL HANDLING
   if (order.userId && typeof order.userId === 'number' && !isNaN(order.userId)) {
-    console.log('🧹 Clearing cart for userId:', order.userId);
+    console.log('🧹 Clearing cart for authenticated userId:', order.userId);
 
     try {
       const userCart = await prisma.cart.findUnique({
@@ -160,9 +163,9 @@ export const confirmPaymentByAdmin = asyncHandler(async (req, res) => {
 
       if (userCart) {
         await prisma.cartItem.deleteMany({ where: { cartId: userCart.id } });
-        console.log(`✅ Cart cleared for cartId: ${userCart.id}`);
+        console.log(`✅ Cart cleared for authenticated user cartId: ${userCart.id}`);
       } else {
-        console.log('ℹ️ No cart found for userId:', order.userId);
+        console.log('ℹ️ No cart found for authenticated userId:', order.userId);
       }
 
       await notify({
@@ -172,12 +175,12 @@ export const confirmPaymentByAdmin = asyncHandler(async (req, res) => {
         relatedOrderId: orderId,
       });
     } catch (cartError) {
-      console.error('❌ Error clearing cart:', cartError);
+      console.error('❌ Error clearing authenticated user cart:', cartError.message);
     }
   } else {
-    console.log('🚫 Skipping cart clear: Invalid or null userId:', order.userId);
+    console.log('ℹ️ Order is for anonymous user - no cart clearing needed, userId:', order.userId);
   }
 
-  console.log('✅ Payment confirmed by admin');
+  console.log('✅ Payment confirmed by admin successfully');
   res.json({ message: 'Payment confirmed by admin' });
 });
