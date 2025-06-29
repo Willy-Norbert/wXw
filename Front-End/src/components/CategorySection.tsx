@@ -12,16 +12,10 @@ const CategorySection = () => {
   
   const { data: categoriesData, isLoading } = useQuery({
     queryKey: ['categories'],
-    queryFn: async () => {
-      console.log('📂 CategorySection: Fetching categories...');
-      const response = await getCategories();
-      console.log('✅ CategorySection: Categories fetched:', response.data?.data?.length || response.data?.length || 0);
-      return response;
-    }
+    queryFn: getCategories
   });
 
-  // Handle both response formats properly
-  const categories = (categoriesData?.data?.data || categoriesData?.data || []).slice(0, 6);
+  const categories = categoriesData?.data?.slice(0, 6) || [];
 
   if (isLoading) {
     return (
@@ -55,28 +49,23 @@ const CategorySection = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map((category) => {
-            const categoryLink = `/products?category=${category.id}`;
-            console.log('🔗 CategorySection: Creating link for category:', category.name, 'Link:', categoryLink);
-            
-            return (
-              <Link key={category.id} to={categoryLink}>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full bg-white">
-                  <CardContent className="p-6 text-center">
-                    <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Package className="w-8 h-8 text-purple-600" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      {category.name}
-                    </h3>
-                    <p className="text-gray-600 text-sm">
-                      {category.description || 'Explore our collection'}
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
+          {categories.map((category) => (
+            <Link key={category.id} to={`/products?category=${category.id}`}>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full bg-white">
+                <CardContent className="p-6 text-center">
+                  <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Package className="w-8 h-8 text-purple-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    {category.name}
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    {category.description || 'Explore our collection'}
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
         </div>
 
         <div className="text-center mt-8">

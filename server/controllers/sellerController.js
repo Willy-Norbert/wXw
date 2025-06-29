@@ -1,101 +1,126 @@
 
 import asyncHandler from 'express-async-handler';
 import prisma from '../prismaClient.js';
+import { sendSellerStatusEmail } from '../utils/emailService.js';
 
-// Submit seller request
+// Submit Seller Request
 export const submitSellerRequest = asyncHandler(async (req, res) => {
-  const { businessName, businessDescription } = req.body;
-  const userId = req.user.id;
+  const { userId, businessName, businessDescription, businessAddress, businessPhone } = req.body;
 
-  // Check if user already has a seller request
-  const existingRequest = await prisma.sellerRequest.findUnique({
-    where: { userId }
-  });
-
-  if (existingRequest) {
-    res.status(400);
-    throw new Error('You have already submitted a seller request');
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
   }
 
-  const sellerRequest = await prisma.sellerRequest.create({
+  if (user.role === 'SELLER') {
+    res.status(400);
+    throw new Error('User is already a seller');
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
     data: {
-      userId,
       businessName,
-      businessDescription,
-      status: 'PENDING'
+      bio: businessDescription,
+      address: businessAddress,
+      phone: businessPhone,
+      role: 'SELLER',
+      sellerStatus: 'INACTIVE',
     }
   });
 
-  res.json({ message: 'Seller request submitted successfully', sellerRequest });
+  res.status(201).json({
+    message: 'Seller request submitted successfully. Awaiting admin approval.',
+    user: {
+      id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      businessName: updatedUser.businessName,
+      sellerStatus: updatedUser.sellerStatus
+    }
+  });
 });
 
-// Get pending sellers (Admin only)
+// Get Pending Sellers (Admin only)
 export const getPendingSellers = asyncHandler(async (req, res) => {
-  const pendingSellers = await prisma.sellerRequest.findMany({
-    where: { status: 'PENDING' },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true
-        }
-      }
+  const pendingSellers = await prisma.user.findMany({
+    where: {
+      role: 'SELLER',
+      sellerStatus: 'INACTIVE'
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      businessName: true,
+      bio: true,
+      address: true,
+      phone: true,
+      createdAt: true,
+      sellerStatus: true
     }
   });
 
   res.json(pendingSellers);
 });
 
-// Update seller status (Admin only)
+// Update Seller Status (Admin only)
 export const updateSellerStatus = asyncHandler(async (req, res) => {
   const { sellerId } = req.params;
-  const { status } = req.body;
+  const { status, isActive } = req.body;
 
-  const sellerRequest = await prisma.sellerRequest.findUnique({
+  const seller = await prisma.user.findUnique({
     where: { id: parseInt(sellerId) },
-    include: { user: true }
   });
 
-  if (!sellerRequest) {
+  if (!seller) {
     res.status(404);
-    throw new Error('Seller request not found');
+    throw new Error('Seller not found');
   }
 
-  // Update seller request status
-  await prisma.sellerRequest.update({
+  if (seller.role !== 'SELLER') {
+    res.status(400);
+    throw new Error('User is not a seller');
+  }
+
+  const updateData = {};
+  if (status) updateData.sellerStatus = status;
+  if (isActive !== undefined) updateData.isActive = isActive;
+
+  const updatedSeller = await prisma.user.update({
     where: { id: parseInt(sellerId) },
-    data: { status }
+    data: updateData,
   });
-
-  // If approved, update user role and seller status
-  if (status === 'ACTIVE') {
-    await prisma.user.update({
-      where: { id: sellerRequest.userId },
-      data: { 
-        role: 'SELLER',
-        sellerStatus: 'ACTIVE'
-      }
-    });
-  }
 
   // Send email notification
   try {
-    const { sendSellerStatusEmail } = await import('../utils/emailService.js');
-    await sendSellerStatusEmail({
-      email: sellerRequest.user.email,
-      name: sellerRequest.user.name,
-      businessName: sellerRequest.businessName
-    }, status);
+    await sendSellerStatusEmail(
+      {
+        email: updatedSeller.email,
+        name: updatedSeller.name,
+        businessName: updatedSeller.businessName
+      },
+      status || updatedSeller.sellerStatus
+    );
   } catch (emailError) {
-    console.error('Email error:', emailError);
+    console.error('Error sending seller status email:', emailError);
   }
 
-  res.json({ message: 'Seller status updated successfully' });
+  res.json({
+    message: 'Seller status updated successfully',
+    seller: {
+      id: updatedSeller.id,
+      name: updatedSeller.name,
+      email: updatedSeller.email,
+      businessName: updatedSeller.businessName,
+      sellerStatus: updatedSeller.sellerStatus,
+      isActive: updatedSeller.isActive
+    }
+  });
 });
 
-// Get seller's products
+// Get Seller Products
 export const getSellerProducts = asyncHandler(async (req, res) => {
   const sellerId = req.user.id;
   
@@ -105,13 +130,8 @@ export const getSellerProducts = asyncHandler(async (req, res) => {
       category: {
         select: {
           id: true,
-          name: true
-        }
-      },
-      _count: {
-        select: {
-          orderItems: true,
-          reviews: true
+          name: true,
+          description: true
         }
       }
     },
@@ -121,15 +141,15 @@ export const getSellerProducts = asyncHandler(async (req, res) => {
   res.json(products);
 });
 
-// Get seller's customers - FIXED TO SHOW ALL CUSTOMERS
+// Get Seller Customers - FIXED to include anonymous customers
 export const getSellerCustomers = asyncHandler(async (req, res) => {
   const sellerId = req.user.id;
   
-  console.log('🔍 Fetching customers for seller:', sellerId);
+  console.log('👥 Getting customers for seller:', sellerId);
 
   try {
-    // Get all orders for seller's products (including anonymous orders)
-    const sellerOrders = await prisma.order.findMany({
+    // Get all orders for this seller's products
+    const orders = await prisma.order.findMany({
       where: {
         items: {
           some: {
@@ -149,247 +169,181 @@ export const getSellerCustomers = asyncHandler(async (req, res) => {
             address: true,
             createdAt: true
           }
-        },
-        _count: {
-          select: {
-            items: true
-          }
         }
       },
-      orderBy: {
-        createdAt: 'desc'
-      }
+      distinct: ['userId', 'customerEmail'] // Get unique customers
     });
 
-    console.log('📦 Found seller orders:', sellerOrders.length);
+    console.log('📋 Found orders for seller:', orders.length);
 
-    // Create a map to track unique customers (both registered and anonymous)
+    // Create a map to track unique customers
     const customerMap = new Map();
 
-    sellerOrders.forEach(order => {
-      let customerId, customerData;
+    orders.forEach(order => {
+      let customerId, customerKey;
       
       if (order.user) {
         // Registered customer
-        customerId = `user_${order.user.id}`;
-        customerData = {
-          id: order.user.id,
-          name: order.user.name,
-          email: order.user.email,
-          phone: order.user.phone || null,
-          address: order.user.address || null,
-          createdAt: order.user.createdAt,
-          type: 'registered',
-          _count: {
-            orders: 0
-          }
-        };
-      } else {
-        // Anonymous customer - use email as identifier
-        const email = order.customerEmail;
-        if (email) {
-          customerId = `anon_${email}`;
-          customerData = {
-            id: `anon_${order.id}`, // Use order ID for anonymous customers
+        customerId = order.user.id;
+        customerKey = `user_${customerId}`;
+        
+        if (!customerMap.has(customerKey)) {
+          customerMap.set(customerKey, {
+            id: customerId,
+            name: order.user.name,
+            email: order.user.email,
+            phone: order.user.phone,
+            address: order.user.address,
+            createdAt: order.user.createdAt,
+            type: 'registered',
+            _count: { orders: 0 }
+          });
+        }
+      } else if (order.customerEmail) {
+        // Anonymous customer
+        customerKey = `guest_${order.customerEmail}`;
+        
+        if (!customerMap.has(customerKey)) {
+          customerMap.set(customerKey, {
+            id: `guest_${order.customerEmail}`,
             name: order.customerName || 'Anonymous Customer',
             email: order.customerEmail,
             phone: null,
-            address: order.shippingAddress || null,
+            address: order.shippingAddress,
             createdAt: order.createdAt,
-            type: 'anonymous',
-            _count: {
-              orders: 0
-            }
-          };
+            type: 'guest',
+            _count: { orders: 0 }
+          });
         }
       }
-
-      if (customerId && customerData) {
-        if (customerMap.has(customerId)) {
-          // Increment order count for existing customer
-          customerMap.get(customerId)._count.orders += 1;
-        } else {
-          // Add new customer with order count of 1
-          customerData._count.orders = 1;
-          customerMap.set(customerId, customerData);
-        }
+      
+      // Increment order count
+      if (customerMap.has(customerKey)) {
+        customerMap.get(customerKey)._count.orders++;
       }
     });
 
-    // Convert map to array
     const customers = Array.from(customerMap.values());
     
-    console.log('👥 Processed customers:', customers.length);
-    console.log('📊 Customer types:', {
-      registered: customers.filter(c => c.type === 'registered').length,
-      anonymous: customers.filter(c => c.type === 'anonymous').length
-    });
-
+    console.log('👥 Returning unique customers:', customers.length);
     res.json(customers);
+    
   } catch (error) {
-    console.error('❌ Error fetching seller customers:', error);
+    console.error('❌ Error getting seller customers:', error);
     res.status(500);
-    throw new Error('Failed to fetch customers');
+    throw new Error('Failed to get customers');
   }
 });
 
-// Update seller customer
+// Update Seller Customer
 export const updateSellerCustomer = asyncHandler(async (req, res) => {
   const { customerId } = req.params;
   const { name, email, phone, address } = req.body;
-  const sellerId = req.user.id;
-
-  // Verify this customer has orders from this seller
-  const customerOrder = await prisma.order.findFirst({
-    where: {
-      OR: [
-        { userId: parseInt(customerId) },
-        { customerEmail: email }
-      ],
-      items: {
-        some: {
-          product: {
-            createdById: sellerId
-          }
-        }
-      }
-    }
+  
+  const updatedCustomer = await prisma.user.update({
+    where: { id: parseInt(customerId) },
+    data: { name, email, phone, address }
   });
-
-  if (!customerOrder) {
-    res.status(404);
-    throw new Error('Customer not found or not associated with your products');
-  }
-
-  // Update user if it's a registered customer
-  if (!isNaN(parseInt(customerId))) {
-    const updatedCustomer = await prisma.user.update({
-      where: { id: parseInt(customerId) },
-      data: { name, email, phone, address }
-    });
-    res.json(updatedCustomer);
-  } else {
-    // For anonymous customers, we can't update their info directly
-    res.status(400);
-    throw new Error('Cannot update anonymous customer information');
-  }
+  
+  res.json(updatedCustomer);
 });
 
-// Remove seller customer (soft delete - just remove from seller's view)
+// Remove Seller Customer
 export const removeSellerCustomer = asyncHandler(async (req, res) => {
   const { customerId } = req.params;
-  const sellerId = req.user.id;
-
-  // We can't actually delete customers, just return that it's not allowed
-  res.status(400);
-  throw new Error('Cannot remove customers - they may have active orders');
+  
+  await prisma.user.delete({
+    where: { id: parseInt(customerId) }
+  });
+  
+  res.json({ message: 'Customer removed successfully' });
 });
 
-// Get seller's orders
+// Get Seller Orders
 export const getSellerOrders = asyncHandler(async (req, res) => {
   const sellerId = req.user.id;
+  
+  console.log('🔍 Getting orders for seller:', sellerId);
+  
+  try {
+    const orders = await prisma.order.findMany({
+      where: {
+        items: {
+          some: {
+            product: {
+              createdById: sellerId
+            }
+          }
+        }
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        items: { 
+          include: { 
+            product: {
+              include: {
+                createdBy: {
+                  select: {
+                    id: true,
+                    name: true,
+                    businessName: true
+                  }
+                }
+              }
+            }
+          } 
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    console.log('✅ Seller orders found:', orders.length);
+    res.json(orders);
+  } catch (error) {
+    console.error('❌ Error in getSellerOrders:', error);
+    throw error;
+  }
+});
 
-  const orders = await prisma.order.findMany({
-    where: {
-      items: {
-        some: {
-          product: {
-            createdById: sellerId
+// Get Seller Stats
+export const getSellerStats = asyncHandler(async (req, res) => {
+  const sellerId = req.user.id;
+  
+  const [productCount, orderCount, totalRevenue] = await Promise.all([
+    prisma.product.count({
+      where: { createdById: sellerId }
+    }),
+    prisma.order.count({
+      where: {
+        items: {
+          some: {
+            product: {
+              createdById: sellerId
+            }
           }
         }
       }
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true
-        }
-      },
-      items: {
-        include: {
-          product: {
-            select: {
-              id: true,
-              name: true,
-              coverImage: true,
-              createdById: true
+    }),
+    prisma.order.aggregate({
+      where: {
+        items: {
+          some: {
+            product: {
+              createdById: sellerId
             }
           }
         },
-        where: {
-          product: {
-            createdById: sellerId
-          }
-        }
+        isPaid: true
+      },
+      _sum: {
+        totalPrice: true
       }
-    },
-    orderBy: { createdAt: 'desc' }
-  });
-
-  res.json(orders);
-});
-
-// Get seller's stats
-export const getSellerStats = asyncHandler(async (req, res) => {
-  const sellerId = req.user.id;
-
-  // Get total products
-  const totalProducts = await prisma.product.count({
-    where: { createdById: sellerId }
-  });
-
-  // Get orders for seller's products
-  const sellerOrders = await prisma.order.findMany({
-    where: {
-      items: {
-        some: {
-          product: {
-            createdById: sellerId
-          }
-        }
-      }
-    },
-    include: {
-      items: {
-        where: {
-          product: {
-            createdById: sellerId
-          }
-        }
-      }
-    }
-  });
-
-  const totalOrders = sellerOrders.length;
+    })
+  ]);
   
-  // Calculate total revenue from seller's products
-  const totalRevenue = sellerOrders.reduce((sum, order) => {
-    const sellerItemsRevenue = order.items.reduce((itemSum, item) => {
-      return itemSum + (item.price * item.quantity);
-    }, 0);
-    return sum + sellerItemsRevenue;
-  }, 0);
-
-  // Get unique customers (registered + anonymous)
-  const customerEmails = new Set();
-  const customerUserIds = new Set();
-  
-  sellerOrders.forEach(order => {
-    if (order.userId) {
-      customerUserIds.add(order.userId);
-    } else if (order.customerEmail) {
-      customerEmails.add(order.customerEmail);
-    }
-  });
-  
-  const totalCustomers = customerUserIds.size + customerEmails.size;
-
   res.json({
-    totalProducts,
-    totalOrders,
-    totalRevenue,
-    totalCustomers
+    productCount,
+    orderCount,
+    totalRevenue: totalRevenue._sum.totalPrice || 0
   });
 });
