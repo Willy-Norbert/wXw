@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import prisma from '../prismaClient.js';
 import { notify } from '../utils/notify.js';
-import { sendOrderConfirmationEmail, sendAdminOrderNotification, sendOrderStatusUpdateEmail } from '../utils/emailService.js';
+import { sendOrderConfirmationEmail, sendAdminOrderNotification, sendOrderStatusUpdateEmail, sendPaymentConfirmationEmail } from '../utils/emailService.js';
 
 // Get Order by ID (Admin/Seller)
 export const getOrderById = asyncHandler(async (req, res) => {
@@ -193,7 +193,7 @@ export const removeFromCart = asyncHandler(async (req, res) => {
   res.json({ data: updatedCart, cartId: cart.id });
 });
 
-// Get User Cart (FIXED AUTHENTICATION)
+// Get User Cart (FIXED NULL USERID HANDLING)
 export const getCart = asyncHandler(async (req, res) => {
   const { cartId } = req.query;
   console.log('🔍 getCart called with hasUser:', !!req.user, 'userId:', req.user?.id, 'cartId:', cartId);
@@ -203,33 +203,9 @@ export const getCart = asyncHandler(async (req, res) => {
     // Authenticated user
     const userId = req.user.id;
     console.log('👤 Getting authenticated user cart for userId:', userId);
-    cart = await prisma.cart.findUnique({
-      where: { userId },
-      include: { 
-        items: { 
-          include: { 
-            product: {
-              select: {
-                id: true,
-                name: true,
-                price: true,
-                coverImage: true,
-                description: true,
-                stock: true
-              }
-            }
-          } 
-        } 
-      }
-    });
-    console.log('👤 Found authenticated user cart:', cart?.id, 'with items:', cart?.items?.length);
-  } else {
-    // Unauthenticated user
-    if (cartId) {
-      const parsedCartId = parseInt(cartId);
-      console.log('👻 Getting anonymous cart with ID:', parsedCartId);
+    try {
       cart = await prisma.cart.findUnique({
-        where: { id: parsedCartId },
+        where: { userId },
         include: { 
           items: { 
             include: { 
@@ -247,7 +223,45 @@ export const getCart = asyncHandler(async (req, res) => {
           } 
         }
       });
-      console.log('👻 Found anonymous cart:', cart?.id, 'with items:', cart?.items?.length);
+      console.log('👤 Found authenticated user cart:', cart?.id, 'with items:', cart?.items?.length);
+    } catch (error) {
+      console.error('❌ Error getting authenticated user cart:', error);
+      cart = null;
+    }
+  } else {
+    // Unauthenticated user
+    if (cartId) {
+      const parsedCartId = parseInt(cartId);
+      if (!isNaN(parsedCartId)) {
+        console.log('👻 Getting anonymous cart with ID:', parsedCartId);
+        try {
+          cart = await prisma.cart.findUnique({
+            where: { id: parsedCartId },
+            include: { 
+              items: { 
+                include: { 
+                  product: {
+                    select: {
+                      id: true,
+                      name: true,
+                      price: true,
+                      coverImage: true,
+                      description: true,
+                      stock: true
+                    }
+                  }
+                } 
+              } 
+            }
+          });
+          console.log('👻 Found anonymous cart:', cart?.id, 'with items:', cart?.items?.length);
+        } catch (error) {
+          console.error('❌ Error getting anonymous cart:', error);
+          cart = null;
+        }
+      } else {
+        console.log('❌ Invalid cartId provided:', cartId);
+      }
     } else {
       console.log('👻 No cartId provided for anonymous user');
     }
@@ -423,7 +437,6 @@ export const placeAnonymousOrder = asyncHandler(async (req, res) => {
 
   res.status(201).json(order);
 });
-
 
 // Create Order by Admin/Seller
 export const createOrder = asyncHandler(async (req, res) => {
@@ -682,7 +695,7 @@ export const deleteOrder = asyncHandler(async (req, res) => {
   res.json({ message: 'Order deleted successfully' });
 });
 
-// Update Order Status (Admin/Seller)
+// Update Order Status (Admin/Seller) - FIXED EMAIL SENDING
 export const updateOrderStatus = asyncHandler(async (req, res) => {
   const orderId = parseInt(req.params.id);
   const { isPaid, isDelivered, status } = req.body;
@@ -762,21 +775,33 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     }
   });
 
-  // Send notification to buyer about status change
-  const buyerEmail = order.user?.email || order.customerEmail;
-  const buyerName = order.user?.name || order.customerName;
+  // FIXED: Send email notification to customer about status change
+  const customerEmail = order.user?.email || order.customerEmail;
+  const customerName = order.user?.name || order.customerName;
   
-  if (buyerEmail && (isDelivered !== undefined || status !== undefined)) {
+  if (customerEmail && (isDelivered !== undefined || status !== undefined || isPaid !== undefined)) {
     try {
-      // Send email notification about order status change
-      await sendOrderStatusUpdateEmail({
-        customerEmail: buyerEmail,
-        customerName: buyerName,
-        orderNumber: order.orderNumber,
-        status: status || (isDelivered ? 'Delivered' : 'Processing'),
-        items: order.items,
-        sellerName: req.user.name || req.user.businessName
-      });
+      // If order is confirmed as paid, send payment confirmation email
+      if (isPaid === true) {
+        await sendPaymentConfirmationEmail({
+          customerEmail,
+          customerName,
+          orderNumber: order.orderNumber,
+          totalPrice: order.totalPrice,
+          items: order.items,
+          shippingAddress: order.shippingAddress,
+          paymentCode: order.paymentCode || '0787778889'
+        });
+        console.log('📧 Payment confirmation email sent to:', customerEmail);
+      } else {
+        // Send general status update email
+        await sendOrderStatusUpdateEmail(
+          customerEmail,
+          status || (isDelivered ? 'Delivered' : isPaid ? 'Paid' : 'Processing'),
+          order.items.map(item => item.product.name).join(', ')
+        );
+        console.log('📧 Status update email sent to:', customerEmail);
+      }
     } catch (emailError) {
       console.error('❌ Error sending status update email:', emailError);
     }
@@ -787,8 +812,8 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     await notify({
       userId: order.userId,
       title: 'Order Status Updated',
-      message: `Your order #${order.orderNumber} status has been updated to: ${status || (isDelivered ? 'Delivered' : 'Processing')}`,
-      recipientRole: 'BUYER'|| 'SELLER'|| 'ADMIN',
+      message: `Your order #${order.orderNumber} status has been updated to: ${status || (isDelivered ? 'Delivered' : isPaid ? 'Paid' : 'Processing')}`,
+      recipientRole: 'BUYER',
       relatedOrderId: order.id,
     });
   }
@@ -797,7 +822,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   res.json(updatedOrder);
 });
 
-// Confirm Order Payment (Admin)
+// Confirm Order Payment (Admin) - FIXED CART CLEARING
 export const confirmOrderPayment = asyncHandler(async (req, res) => {
   const orderId = parseInt(req.params.id);
 
@@ -805,7 +830,10 @@ export const confirmOrderPayment = asyncHandler(async (req, res) => {
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { user: true }
+    include: { 
+      user: true,
+      items: { include: { product: true } }
+    }
   });
 
   if (!order) {
@@ -827,21 +855,49 @@ export const confirmOrderPayment = asyncHandler(async (req, res) => {
     }
   });
 
-  console.log('Payment confirmed successfully');
+  console.log('✅ Payment confirmed successfully');
 
-  // Clear user's cart after payment confirmation
-  const userCart = await prisma.cart.findUnique({ where: { userId: order.userId } });
-  if (userCart) {
-    await prisma.cartItem.deleteMany({ where: { cartId: userCart.id } });
+  // FIXED: Clear user's cart only if userId is valid
+  if (order.userId && typeof order.userId === 'number' && !isNaN(order.userId)) {
+    try {
+      const userCart = await prisma.cart.findUnique({ where: { userId: order.userId } });
+      if (userCart) {
+        await prisma.cartItem.deleteMany({ where: { cartId: userCart.id } });
+        console.log('🧹 Cart cleared for userId:', order.userId);
+      }
+    } catch (cartError) {
+      console.error('❌ Error clearing cart:', cartError);
+    }
+
+    // Notify user of payment confirmation
+    await notify({
+      userId: order.userId,
+      message: `Your payment for Order #${orderId} has been confirmed by admin.`,
+      recipientRole: 'BUYER',
+      relatedOrderId: orderId,
+    });
   }
 
-  // Notify user of payment confirmation
-  await notify({
-    userId: req.user.id,
-    message: `Your payment for Order #${orderId} has been confirmed by admin.`,
-    recipientRole: 'BUYER',
-    relatedOrderId: orderId,
-  });
+  // FIXED: Send payment confirmation email
+  const customerEmail = order.user?.email || order.customerEmail;
+  const customerName = order.user?.name || order.customerName;
+  
+  if (customerEmail) {
+    try {
+      await sendPaymentConfirmationEmail({
+        customerEmail,
+        customerName,
+        orderNumber: order.orderNumber,
+        totalPrice: order.totalPrice,
+        items: order.items,
+        shippingAddress: order.shippingAddress,
+        paymentCode: order.paymentCode || '0787778889'
+      });
+      console.log('📧 Payment confirmation email sent to:', customerEmail);
+    } catch (emailError) {
+      console.error('❌ Error sending payment confirmation email:', emailError);
+    }
+  }
 
   res.json(updatedOrder);
 });

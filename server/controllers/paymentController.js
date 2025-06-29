@@ -1,3 +1,4 @@
+
 import asyncHandler from 'express-async-handler';
 import prisma from '../prismaClient.js';
 import { notify } from '../utils/notify.js';
@@ -97,7 +98,7 @@ export const confirmClientPayment = asyncHandler(async (req, res) => {
   res.json({ message: 'Payment marked as completed. Awaiting admin confirmation.' });
 });
 
-// Admin Confirms Payment
+// Admin Confirms Payment - FIXED CART CLEARING
 export const confirmPaymentByAdmin = asyncHandler(async (req, res) => {
   const orderId = Number(req.params.orderId);
   const order = await prisma.order.findUnique({
@@ -148,29 +149,33 @@ export const confirmPaymentByAdmin = asyncHandler(async (req, res) => {
     console.error('❌ Email send error:', emailError);
   }
 
-  // 🧹 Clear cart for logged-in user only
-  if (typeof order.userId === 'number' && !isNaN(order.userId)) {
+  // 🧹 Clear cart for logged-in user only - FIXED NULL HANDLING
+  if (order.userId && typeof order.userId === 'number' && !isNaN(order.userId)) {
     console.log('🧹 Clearing cart for userId:', order.userId);
 
-    const userCart = await prisma.cart.findUnique({
-      where: { userId: order.userId }
-    });
+    try {
+      const userCart = await prisma.cart.findUnique({
+        where: { userId: order.userId }
+      });
 
-    if (userCart) {
-      await prisma.cartItem.deleteMany({ where: { cartId: userCart.id } });
-      console.log(`✅ Cart cleared for cartId: ${userCart.id}`);
-    } else {
-      console.log('ℹ️ No cart found for userId:', order.userId);
+      if (userCart) {
+        await prisma.cartItem.deleteMany({ where: { cartId: userCart.id } });
+        console.log(`✅ Cart cleared for cartId: ${userCart.id}`);
+      } else {
+        console.log('ℹ️ No cart found for userId:', order.userId);
+      }
+
+      await notify({
+        userId: order.userId,
+        message: `Admin confirmed your payment for Order ID ${orderId}.`,
+        recipientRole: 'BUYER',
+        relatedOrderId: orderId,
+      });
+    } catch (cartError) {
+      console.error('❌ Error clearing cart:', cartError);
     }
-
-    await notify({
-      userId: order.userId,
-      message: `Admin confirmed your payment for Order ID ${orderId}.`,
-      recipientRole: 'BUYER',
-      relatedOrderId: orderId,
-    });
   } else {
-    console.log('🚫 Skipping cart clear: Invalid or null userId');
+    console.log('🚫 Skipping cart clear: Invalid or null userId:', order.userId);
   }
 
   console.log('✅ Payment confirmed by admin');
