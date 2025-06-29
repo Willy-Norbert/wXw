@@ -1,13 +1,14 @@
-
 import React, { useContext, useState } from 'react';
 import { Bell, Moon, LogOut, User, Settings, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { AuthContext } from '../../contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { getNotifications } from '@/api/notifications';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getNotifications, markNotificationRead, deleteNotification } from '@/api/notifications';
+import { useToast } from '@/hooks/use-toast';
 import LanguageSwitcher from '../LanguageSwitcher';
 import {
   DropdownMenu,
@@ -20,6 +21,8 @@ import {
 export const DashboardHeader: React.FC = () => {
   const { user, logout } = useContext(AuthContext);
   const { t } = useLanguage();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: notificationsData } = useQuery({
     queryKey: ['notifications'],
@@ -27,8 +30,34 @@ export const DashboardHeader: React.FC = () => {
     enabled: !!user,
   });
 
+  const markReadMutation = useMutation({
+    mutationFn: markNotificationRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteNotification,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
   const notifications = notificationsData?.data || [];
   const unreadCount = notifications.filter((n: any) => !n.isRead).length;
+
+  const handleNotificationClick = (notification: any) => {
+    // Mark as read if not already read
+    if (!notification.isRead) {
+      markReadMutation.mutate(notification.id);
+    }
+    
+    // Auto-delete after viewing
+    setTimeout(() => {
+      deleteMutation.mutate(notification.id);
+    }, 500);
+  };
 
   const handleLogout = () => {
     logout();
@@ -56,8 +85,6 @@ export const DashboardHeader: React.FC = () => {
         </div>
         
         <div className="flex items-center space-x-4">
-        
-          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
@@ -69,22 +96,55 @@ export const DashboardHeader: React.FC = () => {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 bg-white border border-gray-200 shadow-lg z-50">
+            <DropdownMenuContent 
+              align="end" 
+              className="w-96 max-w-[90vw] bg-white border border-gray-200 shadow-lg z-50 p-0"
+            >
+              <div className="p-3 border-b border-gray-100">
+                <h3 className="font-medium text-sm text-gray-900">Notifications</h3>
+              </div>
+              
               {notifications.length > 0 ? (
-                notifications.slice(0, 5).map((notification: any) => (
-                  <DropdownMenuItem key={notification.id} className="p-3">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm">{notification.message}</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(notification.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </DropdownMenuItem>
-                ))
+                <ScrollArea className="max-h-80">
+                  <div className="p-1">
+                    {notifications.slice(0, 10).map((notification: any) => (
+                      <DropdownMenuItem 
+                        key={notification.id} 
+                        className="p-3 cursor-pointer hover:bg-gray-50 focus:bg-gray-50"
+                        onClick={() => handleNotificationClick(notification)}
+                      >
+                        <div className="flex flex-col space-y-1 w-full min-w-0">
+                          <p className={`text-sm break-words ${
+                            notification.isRead 
+                              ? 'text-gray-700' 
+                              : 'text-gray-900 font-medium'
+                          }`}>
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(notification.createdAt).toLocaleDateString()} at{' '}
+                            {new Date(notification.createdAt).toLocaleTimeString()}
+                          </p>
+                          {!notification.isRead && (
+                            <div className="w-2 h-2 bg-blue-500 rounded-full self-end"></div>
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                    {notifications.length > 10 && (
+                      <div className="p-2 text-center border-t border-gray-100">
+                        <p className="text-xs text-gray-500">
+                          Showing 10 of {notifications.length} notifications
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
               ) : (
-                <DropdownMenuItem>
+                <div className="p-6 text-center">
+                  <Bell className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                   <p className="text-sm text-gray-500">{t('dashboard.notifications')}</p>
-                </DropdownMenuItem>
+                </div>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -121,5 +181,5 @@ export const DashboardHeader: React.FC = () => {
         </div>
       </div>
     </header>
-  );
+  );
 };

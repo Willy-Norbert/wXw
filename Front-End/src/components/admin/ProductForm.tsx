@@ -193,7 +193,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               <SelectValue placeholder="Select seller (leave empty to assign to yourself)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Assign to myself</SelectItem>
+              <SelectItem value="self">Assign to myself</SelectItem>
               {sellers.map((seller) => (
                 <SelectItem key={seller.id} value={seller.id.toString()}>
                   {seller.businessName || seller.name} ({seller.email})

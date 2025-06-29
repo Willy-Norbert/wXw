@@ -76,10 +76,12 @@ export const useImageUpload = () => {
     selectedFile,
     previewImage,
     imageUrl,
+    setSelectedFile,
+    setImageUrl,
+    resetImageUpload,
     handleFileChange,
     handleUrlChange,
     uploadImage,
-    resetImageUpload,
     setPreviewImage
   };
 };

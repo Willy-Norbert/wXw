@@ -15,8 +15,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getProducts, getSellerProducts } from '@/api/products';
 import { getCategories } from '@/api/categories';
 import { useImageUpload } from '@/hooks/useImageUpload';
-import { useToast } from '@/hooks/use-toast';
-
+import { useToast } from '@/components/ui/use-toast';
 const AdminProducts = () => {
   const { t } = useLanguage();
   const { user } = useContext(AuthContext);
@@ -61,7 +60,7 @@ const AdminProducts = () => {
   });
 
   // Image upload hook
-  const { uploadImage, selectedFile, setSelectedFile, imageUrl, setImageUrl, previewImage, resetForm } = useImageUpload();
+  const { uploadImage, selectedFile, setSelectedFile, imageUrl, setImageUrl, previewImage, resetImageUpload } = useImageUpload();
 
   // Product mutations with improved error handling
   const { createProductMutation, updateProductMutation, deleteProductMutation } = useProductMutations(
@@ -69,7 +68,7 @@ const AdminProducts = () => {
     selectedFile,
     imageUrl,
     () => {
-      resetForm();
+      resetImageUpload();
       setIsFormOpen(false);
       setEditingProduct(null);
     }
@@ -91,7 +90,7 @@ const AdminProducts = () => {
         description: "Product created successfully!",
       });
       setIsFormOpen(false);
-      resetForm();
+      resetImageUpload();
       refetch();
     } catch (error) {
       console.error('❌ Error creating product:', error);
@@ -114,7 +113,7 @@ const AdminProducts = () => {
       });
       setEditingProduct(null);
       setIsFormOpen(false);
-      resetForm();
+      resetImageUpload();
       refetch();
     } catch (error) {
       console.error('❌ Error updating product:', error);
@@ -157,7 +156,7 @@ const AdminProducts = () => {
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setEditingProduct(null);
-    resetForm();
+    resetImageUpload();
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
