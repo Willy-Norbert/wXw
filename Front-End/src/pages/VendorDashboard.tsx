@@ -174,27 +174,27 @@ const VendorDashboard = () => {
         
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatsCard
+         <StatsCard
             title="Total Orders"
-            value={statsLoading ? "..." : stats.totalOrders.toString()}
+            value={statsLoading ? "..." : (stats.totalOrders ?? 0).toString()}
             icon={BarChart3}
             color="text-red-500"
           />
           <StatsCard
             title="Total Revenue"
-            value={statsLoading ? "..." : `${stats.totalRevenue.toLocaleString()} Rwf`}
+            value={statsLoading ? "..." : `${(stats.totalRevenue ?? 0).toLocaleString()} Rwf`}
             icon={Clock}
             color="text-green-500"
           />
           <StatsCard
             title="Total Customers"
-            value={statsLoading ? "..." : stats.totalCustomers.toString()}
+            value={statsLoading ? "..." : (stats.totalCustomers ?? 0).toString()}
             icon={Users}
             color="text-blue-500"
           />
           <StatsCard
             title="Total Products"
-            value={statsLoading ? "..." : stats.totalProducts.toString()}
+            value={statsLoading ? "..." : (stats.totalProducts ?? 0).toString()}
             icon={Package}
             color="text-purple-500"
           />

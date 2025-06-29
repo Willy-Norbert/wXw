@@ -67,14 +67,16 @@ const Products = () => {
     }
   });
 
-  const handleCategoryChange = (categoryId: string) => {
+ const handleCategoryChange = (categoryId: string) => {
+  if (categoryId === 'all') {
+    setSelectedCategory('');
+    setSearchParams({});
+  } else {
     setSelectedCategory(categoryId);
-    if (categoryId) {
-      setSearchParams({ category: categoryId });
-    } else {
-      setSearchParams({});
-    }
-  };
+    setSearchParams({ category: categoryId });
+  }
+};
+
 
   const handleAddToCart = (productId: number) => {
     addToCart({ productId, quantity: 1 });
@@ -132,20 +134,29 @@ const Products = () => {
 
           <div className="flex space-x-4">
             {/* Category Filter */}
-            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-              <SelectTrigger className="w-48 bg-gray-50 border-gray-200">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id.toString()}>
+            <Select
+            value={selectedCategory}
+            onValueChange={(value) => handleCategoryChange(value)}
+          >
+            <SelectTrigger className="w-48 bg-gray-50 border-gray-200">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories
+                .filter((category) => category?.id && category?.name) // Defensive: filter valid categories
+                .map((category) => (
+                  <SelectItem
+                    key={category.id}
+                    value={category.id.toString()}
+                  >
                     {category.name}
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
+            </SelectContent>
+          </Select>
+
 
             {/* Sort */}
             <Select value={sortBy} onValueChange={setSortBy}>
