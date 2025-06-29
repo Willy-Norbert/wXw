@@ -1,4 +1,3 @@
-
 import asyncHandler from 'express-async-handler';
 import prisma from '../prismaClient.js';
 import { sendSellerStatusEmail } from '../utils/emailService.js';
@@ -42,12 +41,12 @@ export const submitSellerRequest = asyncHandler(async (req, res) => {
   });
 });
 
-// Get Pending Sellers (Admin only)
+// Get All Sellers (Admin only) - FIXED to return all sellers, not just pending
 export const getPendingSellers = asyncHandler(async (req, res) => {
-  const pendingSellers = await prisma.user.findMany({
+  const allSellers = await prisma.user.findMany({
     where: {
-      role: 'SELLER',
-      sellerStatus: 'INACTIVE'
+      role: 'SELLER'
+      // Removed the sellerStatus filter to show ALL sellers
     },
     select: {
       id: true,
@@ -58,11 +57,14 @@ export const getPendingSellers = asyncHandler(async (req, res) => {
       address: true,
       phone: true,
       createdAt: true,
-      sellerStatus: true
-    }
+      sellerStatus: true,
+      isActive: true,
+      gender: true
+    },
+    orderBy: { createdAt: 'desc' }
   });
 
-  res.json(pendingSellers);
+  res.json(allSellers);
 });
 
 // Update Seller Status (Admin only)

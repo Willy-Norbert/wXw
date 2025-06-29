@@ -1,3 +1,4 @@
+
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
@@ -66,9 +67,10 @@ const SellerManagement = () => {
     if (user.role !== 'ADMIN') navigate('/dashboard');
   }, [user, loading, navigate]);
 
+  // Updated query name and key to reflect that it fetches all sellers
   const { data: sellersData, isLoading, error } = useQuery({
-    queryKey: ['sellers'],
-    queryFn: () => api.get('/sellers/pending'),
+    queryKey: ['all-sellers'], // Changed from 'sellers' to be more specific
+    queryFn: () => api.get('/sellers/pending'), // This endpoint now returns all sellers
     enabled: !!user && user.role === 'ADMIN',
   });
 
@@ -79,7 +81,7 @@ const SellerManagement = () => {
       return api.post('/auth/register', data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['sellers']);
+      queryClient.invalidateQueries(['all-sellers']); // Updated query key
       setIsCreateModalOpen(false);
       form.reset();
       toast({ title: 'Success', description: 'Seller created successfully.' });
@@ -94,7 +96,7 @@ const SellerManagement = () => {
     mutationFn: ({ sellerId, status, isActive }: any) =>
       api.put(`/sellers/${sellerId}/status`, { status, isActive }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['sellers']);
+      queryClient.invalidateQueries(['all-sellers']); // Updated query key
       toast({ title: 'Success', description: 'Seller status updated.' });
     },
     onError: (err: any) => {
