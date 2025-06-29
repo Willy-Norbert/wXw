@@ -82,11 +82,11 @@ export const ProductTable: React.FC<ProductTableProps> = ({ products, onEdit, on
                           <Eye className="w-4 h-4" />
                         </Button>
                       </Link>
-                      <Link to={`/store`} target="_blank">
+                      {/* <Link to={`/store`} target="_blank">
                         <Button variant="ghost" size="sm" title="View on Store" className="text-green-600 hover:text-green-800">
                           <ExternalLink className="w-4 h-4" />
                         </Button>
-                      </Link>
+                      </Link> */}
                       <Button variant="ghost" size="sm" onClick={() => onEdit(product)}>
                         <Edit className="w-4 h-4" />
                       </Button>
