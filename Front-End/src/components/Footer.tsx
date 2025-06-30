@@ -31,7 +31,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 text-purple" />
-                <span className="text-sm text-gray-400">info@rwandamarketplace.com</span>
+                <span className="text-sm text-gray-400">nberitha12@gmail.com</span>
               </div>
             </div>
           </div>
@@ -66,11 +66,11 @@ const Footer = () => {
             <p className="text-gray-400 text-sm mb-4">
               {t('footer.location_description')}
             </p>
-            <div className="bg-gray-800 p-3 rounded-lg">
+            {/* <div className="bg-gray-800 p-3 rounded-lg">
               <p className="text-sm font-semibold">{t('footer.store_hours')}</p>
               <p className="text-xs text-gray-400">{t('footer.weekdays')}</p>
               <p className="text-xs text-gray-400">{t('footer.weekends')}</p>
-            </div>
+            </div> */}
           </div>
         </div>
 

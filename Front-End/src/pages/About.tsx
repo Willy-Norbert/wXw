@@ -25,9 +25,9 @@ const AboutUs = () => {
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
             <div className="w-full md:w-1/3 flex justify-center">
               <img
-                src="/Gentil.jpg" // Replace with the actual path to your image
+                src="https://i.pinimg.com/originals/50/78/a0/5078a05eb1b6847d93383eaa4c0ed500.gif" // Replace with the actual path to your image
                 alt="Smiling woman"
-                className="w-full h-auto max-w-xs md:max-w-none rounded-lg shadow-lg object-cover"
+                className="w-full h-auto max-w-xs md:max-w-none rounded-lg bg-gray-50 "
                 style={{ borderRadius: '8px' }} // Exact match for border-radius
               />
             </div>

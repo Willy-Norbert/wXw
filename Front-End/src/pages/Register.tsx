@@ -52,7 +52,7 @@ const Register = () => {
             Create Account
           </CardTitle>
           <CardDescription>
-            Join our marketplace today <span className=''><a href="/seller-request"><b> login as saller</b></a></span>
+            Join our marketplace today <span className=''><a href="/seller-request"><b> Register as seller</b></a></span>
           </CardDescription>
         </CardHeader>
         <CardContent>

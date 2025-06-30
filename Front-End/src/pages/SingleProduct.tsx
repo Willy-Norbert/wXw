@@ -109,7 +109,7 @@ const SingleProduct = () => {
   const productImages = product.coverImage ? [product.coverImage] : [];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen  bg-white">
       <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="text-sm text-gray-500 mb-6">
@@ -208,9 +208,7 @@ const SingleProduct = () => {
                   <ShoppingCart className="w-4 h-4 mr-2" />
                   {isAddingToCart ? 'Adding...' : 'Add to Cart'}
                 </Button>
-                <Button variant="outline" size="icon">
-                  <Heart className="w-4 h-4" />
-                </Button>
+               
               </div>
             </div>
           </div>

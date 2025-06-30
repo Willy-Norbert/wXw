@@ -1,8 +1,7 @@
-
-import { Search, User, Menu, Settings, LogOut } from 'lucide-react';
+import { Search, User, Menu, Settings, LogOut, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useContext, useState } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import TopBanner from './TopBanner';
@@ -13,8 +12,33 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 const Header = () => {
   const { user, logout } = useContext(AuthContext);
   const { t } = useLanguage();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+
   const handleLogout = () => {
     logout();
+  };
+
+  const handleChatClick = (e: React.MouseEvent) => {
+    // If user is not logged in or not admin/seller, prevent default and redirect to login
+    if (!user || (user.role !== 'ADMIN' && user.role !== 'SELLER')) {
+      e.preventDefault();
+      window.location.href = '/login';
+      return;
+    }
+    // If user is admin or seller, let the Link component handle the navigation
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Navigate to products page with search query
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
 
   return (
@@ -55,16 +79,29 @@ const Header = () => {
 
             {/* Search and Actions */}
             <div className="flex items-center space-x-4">
-              <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-3">
+              <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-3">
                 <Search className="w-4 h-4 text-gray-400 mr-2" />
                 <input 
                   type="text" 
                   placeholder={t('products.search_placeholder')}
-                  className="bg-transparent border-none outline-none text-sm"
+                  value={searchQuery}
+                  onChange={handleSearchInputChange}
+                  className="bg-transparent border-none outline-none text-sm w-64"
                 />
-              </div>
+                <button type="submit" className="sr-only">Search</button>
+              </form>
 
               <CartBadge />
+
+              {/* Chat Icon - Visible to all users */}
+              <Link 
+                to="/community-chat"
+                onClick={handleChatClick}
+              >
+                <Button variant="ghost" size="icon" className="text-gray-700 hover:text-purple-600">
+                  <MessageSquare className="w-5 h-5" />
+                </Button>
+              </Link>
 
               <LanguageSwitcher variant="header" />
 
@@ -120,4 +157,4 @@ const Header = () => {
   );
 };
 
-export default Header;
+export default Header;

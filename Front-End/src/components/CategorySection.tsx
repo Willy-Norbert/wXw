@@ -1,195 +1,144 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent } from '@/components/ui/card';
-import { getCategories } from '@/api/categories';
+import { getCategories, Category } from '@/api/categories';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const CategorySection = () => {
   const { t } = useLanguage();
-  
-  const { data: categoriesData, isLoading } = useQuery({
-    queryKey: ['categories'],
-    queryFn: getCategories
-  });
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const categories = categoriesData?.data?.slice(0, 5) || [];
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        const response = await getCategories();
+        setCategories(response.data.slice(0, 6)); // Show first 6 categories for the grid layout
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Category display data with colors and product images
-  const categoryDisplayData = [
+    fetchCategories();
+  }, []);
+
+  // Default category data with colors and images
+  const defaultCategories = [
     {
-      name: 'Cosmetics and Personal Products',
-      bgColor: 'bg-pink-100',
-      image: '/Cosmetics.jpeg'
+      id: 1,
+      name: "Cosmetics and Personal Products",
+      description: "Beauty and personal care items",
+      bgColor: "bg-pink-100",
+      textColor: "text-pink-800",
+      image: "https://assets.vogue.com/photos/61e9c43c8aa98afba69ec2e8/master/w_2560%2Cc_limit/00_story.jpg"
     },
     {
-      name: 'Clothes',
-      bgColor: 'bg-yellow-100',
-      image: '/Shoes.jpeg'
+      id: 2,
+      name: "Clothes",
+      description: "Fashion and apparel",
+      bgColor: "bg-yellow-100",
+      textColor: "text-yellow-800",
+      image: "/Hero01.jpg"
     },
     {
-      name: 'Made In Rwanda',
-      bgColor: 'bg-purple-100',
-      image: '/Convention.jpg'
+      id: 3,
+      name: "Made in Rwanda",
+      description: "Local Rwandan products",
+      bgColor: "bg-purple-100",
+      textColor: "text-purple-800",
+      image: "https://images.hindustantimes.com/img/2022/12/22/550x309/istockphoto-1279108197-170667a_1671687926903_1671687937504_1671687937504.jpg"
     },
     {
-      name: 'Household Products',
-      bgColor: 'bg-gray-100',
-      image: '/Hero.jpg'
+      id: 4,
+      name: "Household Products",
+      description: "Home and kitchen items",
+      bgColor: "bg-gray-100",
+      textColor: "text-gray-800",
+      image: "https://magazine.eaur.ac.rw/wp-content/uploads/2025/01/some-of-the-collections-by-kezem-fashion-brand.jpg"
     },
     {
-      name: 'Shoes',
-      bgColor: 'bg-green-100',
-      image: '/Shoes.jpeg'
+      id: 5,
+      name: "Shoes",
+      description: "Footwear for all occasions",
+      bgColor: "bg-green-100",
+      textColor: "text-green-800",
+      image: "/Shoes.jpeg"
+    },
+    {
+      id: 6,
+      name: "Electronics",
+      description: "Tech and gadgets",
+      bgColor: "bg-blue-100",
+      textColor: "text-blue-800",
+      image: "/Hero.jpg"
     }
   ];
 
-  if (isLoading) {
+  if (loading) {
     return (
       <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">BROWSE BY CATEGORIES</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="rounded-3xl p-8 animate-pulse bg-gray-200 h-48">
-                <div className="h-4 bg-gray-300 rounded mb-4"></div>
-                <div className="h-20 bg-gray-300 rounded"></div>
-              </div>
-            ))}
+        <div className=" mx-auto px-4">
+          <div className="text-center">
+            <div className="text-lg text-gray-600">{t('categories.loading')}</div>
           </div>
         </div>
       </section>
     );
   }
 
+  // Use fetched categories if available, otherwise use default categories
+  const displayCategories = categories.length > 0 ? categories : defaultCategories;
+
   return (
     <section className="py-16 bg-gray-50">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4 tracking-wide">
-            {t('categories.browse_categories')}
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {/* First row - 2 large cards */}
-          <div className="lg:col-span-1">
-            <Link to={`/products?category=${categories[0]?.id || ''}`}>
-              <Card className={`${categoryDisplayData[0].bgColor} hover:shadow-lg transition-all duration-300 cursor-pointer h-48 rounded-3xl border-0 overflow-hidden group`}>
-                <CardContent className="p-8 h-full flex flex-col justify-between relative">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 leading-tight">
-                      {categoryDisplayData[0].name}
-                    </h3>
-                  </div>
-                  <div className="flex justify-center">
-                    <img 
-                      src={categoryDisplayData[0].image} 
-                      alt={categoryDisplayData[0].name}
-                      className="w-24 h-20 object-contain group-hover:scale-105 transition-transform duration-300"
+      <div className=" mx-auto px-4">
+        <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
+          BROWSE BY CATEGORIES
+        </h2>
+        
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {displayCategories.slice(0, 6).map((category, index) => {
+              const defaultCat = defaultCategories[index] || defaultCategories[0];
+              return (
+                <Link to={`/products?category=${categories[0]?.id || ''}`}>
+                  <div className={`${defaultCat.bgColor} rounded-2xl p-6 h-48 flex flex-col justify-between transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg relative overflow-hidden`}>
+                    {/* Background image overlay */}
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center opacity-20 group-hover:opacity-30 transition-opacity duration-300"
+                      style={{ backgroundImage: `url(${defaultCat.image})` }}
                     />
+                    
+                    {/* Content */}
+                    <div className="relative z-10">
+                      <h3 className={`text-lg font-bold ${defaultCat.textColor} mb-2 leading-tight`}>
+                        {category.name}
+                      </h3>
+                      {category.description && (
+                        <p className={`text-sm ${defaultCat.textColor} opacity-80`}>
+                          {category.description}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Product illustration/icon in bottom right */}
+                    <div className="relative z-10 flex justify-end">
+                      <div className="w-16 h-16 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                        <img 
+                          src={defaultCat.image} 
+                          alt={category.name}
+                          className="w-12 h-12 object-cover rounded-lg opacity-80"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </Link>
+                </Link>
+              );
+            })}
           </div>
-
-          <div className="lg:col-span-1">
-            <Link to={`/products?category=${categories[1]?.id || ''}`}>
-              <Card className={`${categoryDisplayData[1].bgColor} hover:shadow-lg transition-all duration-300 cursor-pointer h-48 rounded-3xl border-0 overflow-hidden group`}>
-                <CardContent className="p-8 h-full flex flex-col justify-between relative">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 leading-tight">
-                      {categoryDisplayData[1].name}
-                    </h3>
-                  </div>
-                  <div className="flex justify-center">
-                    <img 
-                      src={categoryDisplayData[1].image} 
-                      alt={categoryDisplayData[1].name}
-                      className="w-24 h-20 object-contain group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
-
-          {/* Second row - 3 cards */}
-          <div className="lg:col-span-1">
-            <Link to={`/products?category=${categories[2]?.id || ''}`}>
-              <Card className={`${categoryDisplayData[2].bgColor} hover:shadow-lg transition-all duration-300 cursor-pointer h-48 rounded-3xl border-0 overflow-hidden group`}>
-                <CardContent className="p-8 h-full flex flex-col justify-between relative">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 leading-tight">
-                      {categoryDisplayData[2].name}
-                    </h3>
-                  </div>
-                  <div className="flex justify-center">
-                    <img 
-                      src={categoryDisplayData[2].image} 
-                      alt={categoryDisplayData[2].name}
-                      className="w-20 h-16 object-contain group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
-
-          <div className="lg:col-span-1">
-            <Link to={`/products?category=${categories[3]?.id || ''}`}>
-              <Card className={`${categoryDisplayData[3].bgColor} hover:shadow-lg transition-all duration-300 cursor-pointer h-48 rounded-3xl border-0 overflow-hidden group`}>
-                <CardContent className="p-8 h-full flex flex-col justify-between relative">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 leading-tight">
-                      {categoryDisplayData[3].name}
-                    </h3>
-                  </div>
-                  <div className="flex justify-center">
-                    <img 
-                      src={categoryDisplayData[3].image} 
-                      alt={categoryDisplayData[3].name}
-                      className="w-24 h-20 object-contain group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
-
-          <div className="lg:col-span-1">
-            <Link to={`/products?category=${categories[4]?.id || ''}`}>
-              <Card className={`${categoryDisplayData[4].bgColor} hover:shadow-lg transition-all duration-300 cursor-pointer h-48 rounded-3xl border-0 overflow-hidden group`}>
-                <CardContent className="p-8 h-full flex flex-col justify-between relative">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 leading-tight">
-                      {categoryDisplayData[4].name}
-                    </h3>
-                  </div>
-                  <div className="flex justify-center">
-                    <img 
-                      src={categoryDisplayData[4].image} 
-                      alt={categoryDisplayData[4].name}
-                      className="w-24 h-20 object-contain group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
-        </div>
-
-        <div className="text-center mt-8">
-          <Link 
-            to="/categories" 
-            className="inline-flex items-center px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            {t('categories.view_all')}
-          </Link>
         </div>
       </div>
     </section>

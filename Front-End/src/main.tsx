@@ -84,7 +84,8 @@ const App = () => {
               <Route path="/orders" element={<Orders />} />
               <Route path="/orders/:id" element={<OrderPreview />} />
               <Route path="/chat" element={<CommunityChat />} />
-              <Route path="/community-chat" element={<CommunityChat />} />
+              
+              <Route path="/community-chat" element={<SellerGuard><CommunityChat /></SellerGuard>} />
 
               {/* Dashboard Routes */}
               <Route path="/dashboard" element={<SellerGuard><Dashboard /></SellerGuard>} />

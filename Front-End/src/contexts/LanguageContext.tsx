@@ -104,7 +104,7 @@ const translations = {
     'footer.store_hours': 'Store Hours',
     'footer.weekdays': 'Mon - Fri: 9:00 AM - 9:00 PM',
     'footer.weekends': 'Sat - Sun: 10:00 AM - 9:00 PM',
-    'footer.copyright': '© 2024 WomXchange. All rights reserved. Made with ❤ for women entrepreneurs.',
+    'footer.copyright': '© 2024 WomXchange. All rights reserved women entrepreneurs.',
     
     // Testimonials
     'testimonials.title': 'OUR HAPPY CUSTOMERS',

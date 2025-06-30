@@ -22,7 +22,7 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState('MTN');
   const [sameAsBilling, setSameAsBilling] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [paymentCode, setPaymentCode] = useState('0787778889'); // Static payment code
+  const [paymentCode, setPaymentCode] = useState('+250784720984'); // Static payment code
   const [currentOrderId, setCurrentOrderId] = useState<number | null>(null);
   
   // Form data
@@ -40,7 +40,7 @@ const Checkout = () => {
     setPaymentMethod(method);
     
     if (method === 'MTN') {
-      setPaymentCode('0787778889'); // Always use static code
+      setPaymentCode('+250784720984'); // Always use static code
     } else {
       setPaymentCode('');
     }
@@ -271,6 +271,7 @@ const Checkout = () => {
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                     <h3 className="font-semibold mb-2">MoMo Payment Code</h3>
                     <div className="bg-white p-3 rounded border-2 border-green-500">
+                      <h6> * Beritha Niyotwagira</h6>
                       <div className="text-lg font-bold text-green-600">{paymentCode}</div>
                       <p className="text-sm text-gray-600 mt-1">
                         Use this number to complete your MoMo payment
