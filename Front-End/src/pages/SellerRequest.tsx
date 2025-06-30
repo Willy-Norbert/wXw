@@ -8,10 +8,12 @@ import { ArrowLeft, Mail } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/api/api";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const SellerRequest = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -155,14 +157,13 @@ const SellerRequest = () => {
             </div>
 
             <div className="space-y-2">
-              <Input
-                type="password"
+              <PasswordInput
+                id="password"
                 placeholder="Password"
                 value={formData.password}
-                onChange={(e) => handleInputChange("password", e.target.value)}
+                onChange={(e) => [handleInputChange("password", e.target.value), setPassword(e.target.value)]}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 required
-                minLength={6}
               />
             </div>
 
