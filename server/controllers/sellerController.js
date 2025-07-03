@@ -6,7 +6,7 @@ import {sendSellerWelcomeEmail} from '../utils/emailService.js';
 
 // Submit seller request
 export const submitSellerRequest = asyncHandler(async (req, res) => {
-  const { name, email, phone, businessName, businessDescription } = req.body;
+  const { name, email, phone, businessName, businessDescription, password } = req.body;
 
   // Check if user already exists
   let user = await prisma.user.findUnique({
@@ -20,18 +20,31 @@ export const submitSellerRequest = asyncHandler(async (req, res) => {
       throw new Error('User is already an active seller');
     }
 
+    // Hash the new password if provided
+    const updateData = {
+      sellerStatus: 'PENDING',
+      businessName,
+      bio: businessDescription || null,
+      ...(phone && { phone })
+    };
+
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updateData.password = hashedPassword;
+    }
+
     user = await prisma.user.update({
       where: { id: user.id },
-      data: {
-        sellerStatus: 'PENDING',
-        businessName,
-        bio: businessDescription || null,
-        ...(phone && { phone })
-      }
+      data: updateData
     });
   } else {
-    // Create new user with seller request
-    const hashedPassword = await bcrypt.hash('tempPassword123', 10);
+    // Create new user with seller request - use provided password
+    if (!password) {
+      res.status(400);
+      throw new Error('Password is required for new seller registration');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
     
     user = await prisma.user.create({
       data: {
@@ -43,7 +56,7 @@ export const submitSellerRequest = asyncHandler(async (req, res) => {
         sellerStatus: 'PENDING',
         businessName,
         bio: businessDescription || null,
-        isActive: true  // FIXED: Allow sellers to login immediately after registration
+        isActive: true  // Allow sellers to login immediately after registration
       }
     });
   }
