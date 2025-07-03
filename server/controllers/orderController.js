@@ -491,22 +491,25 @@ export const placeAnonymousOrder = asyncHandler(async (req, res) => {
 
 // Create Order by Admin/Seller
 export const createOrder = asyncHandler(async (req, res) => {
-  const { userId, billingAddress, shippingAddress, paymentMethod, items, totalPrice, shippingPrice = 0 } = req.body;
+  const { userId, customerName, customerEmail, customerPhone, billingAddress, shippingAddress, paymentMethod, items, totalPrice, shippingPrice = 0 } = req.body;
 
   console.log('Creating order for user:', userId, 'by:', req.user.role, 'userId type:', typeof userId);
 
-  // Validate userId is provided and is a number
-  if (!userId || typeof userId !== 'number' || isNaN(userId)) {
+  // Handle both registered users and guest customers
+  let user = null;
+  if (userId && typeof userId === 'number' && !isNaN(userId)) {
+    // Validate user exists for registered customers
+    user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      res.status(404);
+      throw new Error('User not found');
+    }
+  } else if (!customerName || !customerEmail) {
+    // For guest customers, name and email are required
     res.status(400);
-    throw new Error('Valid user ID is required');
+    throw new Error('Customer name and email are required for guest orders');
   }
 
-  // Validate user exists
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) {
-    res.status(404);
-    throw new Error('User not found');
-  }
 
   // If seller, validate they can only create orders with their products
   if (req.user.role.toLowerCase() === 'seller') {
@@ -529,8 +532,11 @@ export const createOrder = asyncHandler(async (req, res) => {
 
   const order = await prisma.order.create({
     data: {
-      userId,
+      ...(userId && { userId }),
       orderNumber,
+      customerName: customerName || user?.name,
+      customerEmail: customerEmail || user?.email,
+      customerPhone: customerPhone || user?.phone || null,
       billingAddress: billingAddress || null,
       shippingAddress,
       paymentMethod,
@@ -551,33 +557,31 @@ export const createOrder = asyncHandler(async (req, res) => {
 
   // FIXED: Send order confirmation email to customer regardless of who creates it
   try {
+    const emailData = {
+      customerEmail: order.customerEmail,
+      customerName: order.customerName,
+      orderNumber: order.orderNumber,
+      totalPrice: order.totalPrice,
+      items: order.items,
+      shippingAddress: order.shippingAddress,
+      paymentMethod: order.paymentMethod,
+    };
+
     if (req.user.role.toLowerCase() === 'seller') {
       await sendSellerOrderConfirmationEmail({
-        customerEmail: user.email,
-        customerName: user.name,
-        orderNumber: order.orderNumber,
-        totalPrice: order.totalPrice,
-        items: order.items,
-        shippingAddress: order.shippingAddress,
-        paymentMethod: order.paymentMethod,
+        ...emailData,
         sellerName: req.user.name,
         sellerBusinessName: req.user.businessName
       });
-      console.log('✅ Seller order confirmation email sent to customer:', user.email);
+      console.log('✅ Seller order confirmation email sent to customer:', order.customerEmail);
     } else {
       // Admin creating order - send regular confirmation email
       await sendOrderConfirmationEmail({
-        customerEmail: user.email,
-        customerName: user.name,
-        orderNumber: order.orderNumber,
-        totalPrice: order.totalPrice,
-        items: order.items,
-        shippingAddress: order.shippingAddress,
-        paymentMethod: order.paymentMethod,
+        ...emailData,
         deliveryFee: shippingPrice || 0,
         discount: 0
       });
-      console.log('✅ Admin order confirmation email sent to customer:', user.email);
+      console.log('✅ Admin order confirmation email sent to customer:', order.customerEmail);
     }
   } catch (emailError) {
     console.error('❌ Error sending order confirmation email:', emailError);
@@ -586,7 +590,7 @@ export const createOrder = asyncHandler(async (req, res) => {
   await notify({
     userId: req.user.id,
     title: 'Order Created',
-    message: `Order #${order.orderNumber} created by ${req.user.role} for user ${user.name}.`,
+    message: `Order #${order.orderNumber} created by ${req.user.role} for customer ${order.customerName}.`,
     type: 'SUCCESS',
     recipientRole: 'BUYER',
     relatedOrderId: order.id,

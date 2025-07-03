@@ -230,6 +230,7 @@ export const ThreeStepSellerOrderCreation: React.FC<ThreeStepSellerOrderCreation
     }
 
     const orderPayload = {
+      userId: isCreatingNewCustomer ? null : selectedCustomer?.id,
       customerName: isCreatingNewCustomer ? newCustomerData.customerName : selectedCustomer?.name || '',
       customerEmail: isCreatingNewCustomer ? newCustomerData.customerEmail : selectedCustomer?.email || '',
       customerPhone: isCreatingNewCustomer ? newCustomerData.customerPhone : selectedCustomer?.phone || '',

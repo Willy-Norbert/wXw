@@ -21,15 +21,25 @@ const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedSeller, setSelectedSeller] = useState<string>('');
   const [sortBy, setSortBy] = useState('name');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  // Get category filter from URL parameters
+  // Get filters from URL parameters
   useEffect(() => {
     const categoryParam = searchParams.get('category');
+    const sellerParam = searchParams.get('seller');
+    const searchParam = searchParams.get('search');
+    
     if (categoryParam) {
       setSelectedCategory(categoryParam);
+    }
+    if (sellerParam) {
+      setSelectedSeller(sellerParam);
+    }
+    if (searchParam) {
+      setSearchTerm(searchParam);
     }
   }, [searchParams]);
 
@@ -54,7 +64,10 @@ const Products = () => {
     const matchesCategory = !selectedCategory || 
                            product.categoryId.toString() === selectedCategory;
     
-    return matchesSearch && matchesCategory;
+    const matchesSeller = !selectedSeller ||
+                         product.createdById?.toString() === selectedSeller;
+    
+    return matchesSearch && matchesCategory && matchesSeller;
   }).sort((a, b) => {
     switch (sortBy) {
       case 'price-low':

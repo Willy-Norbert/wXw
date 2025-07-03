@@ -10,6 +10,7 @@ import TopBanner from './TopBanner';
 import LanguageSwitcher from './LanguageSwitcher';
 import CartBadge from './CartBadge';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import SellersDropdown from './SellersDropdown';
 
 const Header = () => {
   const { user, logout } = useContext(AuthContext);
@@ -103,6 +104,16 @@ const Header = () => {
                   <Link to="/categories" className="text-gray-700 hover:text-purple-600 transition-colors">
                     {t('nav.categories')}
                   </Link>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="text-gray-700 hover:text-purple-600 transition-colors">
+                        Sellers
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="bg-white border border-gray-200 shadow-lg z-50 w-56">
+                      <SellersDropdown />
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Link to="/about" className="text-gray-700 hover:text-purple-600 transition-colors">
                     {t('nav.about')}
                   </Link>

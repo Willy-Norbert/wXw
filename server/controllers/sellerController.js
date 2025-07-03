@@ -209,7 +209,7 @@ export const getSellerProducts = asyncHandler(async (req, res) => {
 
 // Get seller's customers (Seller only)
 export const getSellerCustomers = asyncHandler(async (req, res) => {
-  // Get customers who have bought from this seller
+  // Get customers who have bought from this seller (including guest customers)
   const orders = await prisma.order.findMany({
     where: {
       items: {
@@ -230,10 +230,37 @@ export const getSellerCustomers = asyncHandler(async (req, res) => {
         }
       }
     },
-    distinct: ['userId']
+    distinct: ['userId', 'customerEmail'] // Include guest customers
   });
 
-  const customers = orders.map(order => order.user).filter(Boolean);
+  // Combine registered users and guest customers
+  const customers = [];
+  const seenEmails = new Set();
+
+  orders.forEach(order => {
+    if (order.user) {
+      // Registered user
+      if (!customers.find(c => c.id === order.user.id)) {
+        customers.push({
+          id: order.user.id,
+          name: order.user.name,
+          email: order.user.email,
+          phone: order.user.phone,
+          isGuest: false
+        });
+      }
+    } else if (order.customerEmail && !seenEmails.has(order.customerEmail)) {
+      // Guest customer
+      seenEmails.add(order.customerEmail);
+      customers.push({
+        id: `guest_${order.customerEmail}`, // Use email as identifier for guests
+        name: order.customerName,
+        email: order.customerEmail,
+        phone: order.customerPhone,
+        isGuest: true
+      });
+    }
+  });
   
   res.json(customers);
 });
