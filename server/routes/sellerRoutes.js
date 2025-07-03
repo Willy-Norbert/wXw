@@ -21,7 +21,7 @@ router.post('/request', submitSellerRequest);
 
 // Admin routes for managing sellers
 router.get('/pending', protect, authorizeRoles('admin'), getPendingSellers);
-router.get('/all', protect, authorizeRoles('admin'), getAllSellers);
+router.get('/all', getAllSellers);
 router.put('/:sellerId/status', protect, authorizeRoles('admin'), updateSellerStatus);
 
 // Seller-specific routes - ONLY for active sellers

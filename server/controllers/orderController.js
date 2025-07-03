@@ -333,25 +333,29 @@ export const placeOrder = asyncHandler(async (req, res) => {
   // Generate order number
   const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-  const order = await prisma.order.create({
-    data: {
-      userId,
-      orderNumber,
-      shippingAddress,
-      paymentMethod,
-      totalPrice,
-      shippingPrice: deliveryFee,
-      discountAmount: discount,
-      isPaid: false,
-      items: {
-        create: orderItemsData
-      }
+const order = await prisma.order.create({
+  data: {
+    user: {
+      connect: { id: userId } // ✅ Proper way to set a relation
     },
-    include: {
-      items: { include: { product: true } },
-      user: { select: { id: true, name: true, email: true } }
+    orderNumber,
+    shippingAddress, // ✅ Must be a JSON object
+    paymentMethod,
+    totalPrice,
+    shippingPrice: deliveryFee,
+    discountAmount: discount,
+    isPaid: false,
+    items: {
+      create: orderItemsData
     }
-  });
+  },
+  include: {
+    items: { include: { product: true } },
+    user: { select: { id: true, name: true, email: true } }
+  }
+});
+
+
 
   await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
 

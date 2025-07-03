@@ -33,7 +33,7 @@ router.put('/profile', protect, updateUserProfile);
 
 // Admin only routes
 router.route('/users')
-  .get(protect, authorizeRoles('admin',), getAllUsers)
+  .get(protect, authorizeRoles('admin','seller'), getAllUsers)
   .post(protect, authorizeRoles('admin'), createUser);
 
 router.route('/users/:userId')
