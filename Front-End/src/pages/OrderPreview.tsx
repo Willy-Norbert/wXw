@@ -291,19 +291,17 @@ const OrderPreview = () => {
                 <div className="border-t pt-4 mt-4 space-y-2">
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-sm">
-                      <span>Subtotal:</span>
-                      <span>{((order.totalPrice || 0) - (order.shippingPrice || 0) + (order.discountAmount || 0)).toLocaleString()} Rwf</span>
+                      <span>Products Subtotal:</span>
+                      <span>{displayItems.reduce((acc, item) => acc + (item.price * item.quantity), 0).toLocaleString()} Rwf</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span>Delivery Fee:</span>
+                      <span>{(order.shippingPrice || 1200).toLocaleString()} Rwf</span>
                     </div>
                     {order.discountAmount && order.discountAmount > 0 && (
                       <div className="flex justify-between items-center text-sm text-green-600">
                         <span>Discount:</span>
                         <span>-{order.discountAmount.toLocaleString()} Rwf</span>
-                      </div>
-                    )}
-                    {order.shippingPrice && order.shippingPrice > 0 && (
-                      <div className="flex justify-between items-center text-sm">
-                        <span>Delivery Fee:</span>
-                        <span>{order.shippingPrice.toLocaleString()} Rwf</span>
                       </div>
                     )}
                   </div>

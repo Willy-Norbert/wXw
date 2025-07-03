@@ -43,7 +43,9 @@ export const ThreeStepOrderCreation: React.FC<ThreeStepOrderCreationProps> = ({
     shippingAddress: '',
     paymentMethod: 'MTN',
     items: [] as OrderItem[],
-    totalPrice: 0
+    totalPrice: 0,
+    deliveryFee: 1200, // Default delivery fee
+    discountAmount: 0 // Optional discount
   });
 
   const { toast } = useToast();
@@ -124,7 +126,9 @@ export const ThreeStepOrderCreation: React.FC<ThreeStepOrderCreationProps> = ({
       shippingAddress: '',
       paymentMethod: 'MTN',
       items: [],
-      totalPrice: 0
+      totalPrice: 0,
+      deliveryFee: 1200,
+      discountAmount: 0
     });
   };
 
@@ -134,11 +138,12 @@ export const ThreeStepOrderCreation: React.FC<ThreeStepOrderCreationProps> = ({
     }
   }, [isOpen]);
 
-  // Calculate total when items change
+  // Calculate total when items, delivery fee, or discount change
   useEffect(() => {
-    const total = orderData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    setOrderData(prev => ({ ...prev, totalPrice: total }));
-  }, [orderData.items]);
+    const itemsTotal = orderData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const total = itemsTotal + orderData.deliveryFee - orderData.discountAmount;
+    setOrderData(prev => ({ ...prev, totalPrice: Math.max(0, total) }));
+  }, [orderData.items, orderData.deliveryFee, orderData.discountAmount]);
 
   const handleNext = () => {
     if (currentStep === 1) {
@@ -252,7 +257,9 @@ export const ThreeStepOrderCreation: React.FC<ThreeStepOrderCreationProps> = ({
         quantity: item.quantity,
         price: item.price
       })),
-      totalPrice: orderData.totalPrice
+      totalPrice: orderData.totalPrice,
+      shippingPrice: orderData.deliveryFee,
+      discountAmount: orderData.discountAmount
     });
   };
 
@@ -412,6 +419,31 @@ export const ThreeStepOrderCreation: React.FC<ThreeStepOrderCreationProps> = ({
           </Select>
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="deliveryFee">Delivery Fee (Rwf)</Label>
+            <Input
+              id="deliveryFee"
+              type="number"
+              min="0"
+              value={orderData.deliveryFee}
+              onChange={(e) => setOrderData({...orderData, deliveryFee: parseInt(e.target.value) || 0})}
+              placeholder="1200"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="discount">Discount Amount (Rwf)</Label>
+            <Input
+              id="discount"
+              type="number"
+              min="0"
+              value={orderData.discountAmount}
+              onChange={(e) => setOrderData({...orderData, discountAmount: parseInt(e.target.value) || 0})}
+              placeholder="0"
+            />
+          </div>
+        </div>
+
         {/* Order Items Section */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -500,11 +532,28 @@ export const ThreeStepOrderCreation: React.FC<ThreeStepOrderCreationProps> = ({
           <p className="text-sm mb-2">
             <strong>Items:</strong> {orderData.items.length}
           </p>
-          <p className="text-sm mb-2">
-            <strong>Total Amount:</strong> {orderData.items.filter(item => item.productId > 0 && item.quantity > 0)
-              .reduce((sum, item) => sum + (item.price * item.quantity), 0)
-              .toLocaleString()} Rwf
-          </p>
+          <div className="text-sm space-y-1 mb-2">
+            <div className="flex justify-between">
+              <span><strong>Items Subtotal:</strong></span>
+              <span>{orderData.items.filter(item => item.productId > 0 && item.quantity > 0)
+                .reduce((sum, item) => sum + (item.price * item.quantity), 0)
+                .toLocaleString()} Rwf</span>
+            </div>
+            <div className="flex justify-between">
+              <span><strong>Delivery Fee:</strong></span>
+              <span>{orderData.deliveryFee.toLocaleString()} Rwf</span>
+            </div>
+            {orderData.discountAmount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span><strong>Discount:</strong></span>
+                <span>-{orderData.discountAmount.toLocaleString()} Rwf</span>
+              </div>
+            )}
+            <div className="flex justify-between border-t pt-1 font-bold">
+              <span><strong>Total Amount:</strong></span>
+              <span>{orderData.totalPrice.toLocaleString()} Rwf</span>
+            </div>
+          </div>
           <p className="text-sm mb-2">
             <strong>Shipping Address:</strong> {orderData.shippingAddress || 'Not provided'}
           </p>

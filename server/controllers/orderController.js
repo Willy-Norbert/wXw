@@ -524,7 +524,7 @@ const order = await prisma.order.create({
 
 // Create Order by Admin/Seller
 export const createOrder = asyncHandler(async (req, res) => {
-  const { userId, customerName, customerEmail, billingAddress, shippingAddress, paymentMethod, items, totalPrice, shippingPrice = 0 } = req.body;
+  const { userId, customerName, customerEmail, billingAddress, shippingAddress, paymentMethod, items, totalPrice, shippingPrice = 0, discountAmount = 0 } = req.body;
 
   console.log('Creating order for user:', userId, 'by:', req.user.role, 'userId type:', typeof userId);
 
@@ -591,6 +591,7 @@ export const createOrder = asyncHandler(async (req, res) => {
       paymentMethod,
       totalPrice,
       shippingPrice: shippingPrice || 0,
+      discountAmount: discountAmount || 0, // ✅ Add discount amount
       isPaid: false, // Never automatically mark as paid
       items: {
         create: items
@@ -1085,8 +1086,8 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
         });
         console.log('✅ Delivery status email sent successfully to:', customerEmail);
       }
-      // Send payment confirmation email for payment updates (FIXED to work without admin confirmation)
-      else if (isPaid === true) {
+      // Send payment confirmation email for payment updates
+      if (isPaid === true) {
         console.log('📧 Sending payment confirmation email for payment status change...');
         await sendPaymentConfirmationEmail({
           customerEmail,
@@ -1100,7 +1101,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
         console.log('✅ Payment confirmation email sent successfully to:', customerEmail);
       }
       // Send general status update email for other status changes
-      else if (status !== undefined) {
+      if (status !== undefined && isDelivered === undefined && isPaid !== true) {
         console.log('📧 Sending general status update email...');
         await sendOrderStatusUpdateEmail(
           customerEmail,
