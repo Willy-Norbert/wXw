@@ -298,48 +298,64 @@ export const getCart = asyncHandler(async (req, res) => {
 
 // Place an Order (from Cart) - requires authentication
 export const placeOrder = asyncHandler(async (req, res) => {
-  const userId = req.user.id;
-  const { shippingAddress, paymentMethod } = req.body;
+  const userId = req.user?.id; // Will be undefined for guests
+  const { shippingAddress, paymentMethod, customerName, customerEmail, billingAddress } = req.body;
 
-  console.log('Placing order for user:', userId);
+  console.log('Placing order for user:', userId ?? 'GUEST');
 
-  const cart = await prisma.cart.findUnique({
-    where: { userId },
-    include: { items: { include: { product: true } } }
-  });
+  // Get cart: for logged-in user
+  let cart;
+  if (userId) {
+    cart = await prisma.cart.findUnique({
+      where: { userId },
+      include: { items: { include: { product: true } } }
+    });
+  } else {
+    // For guest (anonymous) orders: use guestId from body
+    const { guestId } = req.body;
+    if (!guestId) {
+      res.status(400);
+      throw new Error('Guest ID is required for anonymous orders.');
+    }
+
+    cart = await prisma.cart.findUnique({
+      where: { guestId },
+      include: { items: { include: { product: true } } }
+    });
+  }
 
   if (!cart || cart.items.length === 0) {
     res.status(400);
     throw new Error('Cart is empty');
   }
 
+  // Prepare order item data
   const orderItemsData = cart.items.map(item => ({
     productId: item.productId,
     quantity: item.quantity,
     price: item.product.price,
   }));
 
+  // Calculate totals
   const subtotal = orderItemsData.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const discount = Math.round(subtotal * APP_CONSTANTS.DISCOUNT_RATE);
   const subtotalAfterDiscount = subtotal - discount;
-  
-  // Add delivery fee unless Pay on Delivery is selected
-  const deliveryFee = paymentMethod === APP_CONSTANTS.PAYMENT_METHODS.PAY_ON_DELIVERY 
-    ? 0 
+
+  const deliveryFee = paymentMethod === APP_CONSTANTS.PAYMENT_METHODS.PAY_ON_DELIVERY
+    ? 0
     : APP_CONSTANTS.DELIVERY_FEE;
-  
+
   const totalPrice = subtotalAfterDiscount + deliveryFee;
 
-  // Generate order number
   const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-const order = await prisma.order.create({
-  data: {
-    user: {
-      connect: { id: userId } // ✅ Proper way to set a relation
-    },
+  // Prepare order data
+  const orderData = {
     orderNumber,
-    shippingAddress, // ✅ Must be a JSON object
+    customerName,
+    customerEmail,
+    billingAddress: billingAddress || null,
+    shippingAddress,
     paymentMethod,
     totalPrice,
     shippingPrice: deliveryFee,
@@ -347,55 +363,66 @@ const order = await prisma.order.create({
     isPaid: false,
     items: {
       create: orderItemsData
+    },
+    ...(userId && {
+      user: {
+        connect: { id: userId }
+      }
+    })
+  };
+
+  const order = await prisma.order.create({
+    data: orderData,
+    include: {
+      items: { include: { product: true } },
+      user: { select: { id: true, name: true, email: true } }
     }
-  },
-  include: {
-    items: { include: { product: true } },
-    user: { select: { id: true, name: true, email: true } }
-  }
-});
+  });
 
-
-
+  // Cleanup cart
   await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
 
-  console.log('Order created successfully:', order.id);
+  console.log('✅ Order created successfully:', order.id);
 
-  // Send email notifications with proper delivery fee and payment info
+  // Send emails if user info is available
   try {
-    await sendOrderConfirmationEmail({
-      customerEmail: order.user.email,
-      customerName: order.user.name,
-      orderNumber: order.orderNumber,
-      totalPrice: order.totalPrice,
-      items: order.items,
-      shippingAddress: order.shippingAddress,
-      paymentMethod: order.paymentMethod,
-      deliveryFee: deliveryFee,
-      discount: discount
-    });
+    if (order.user) {
+      await sendOrderConfirmationEmail({
+        customerEmail: order.user.email,
+        customerName: order.user.name,
+        orderNumber: order.orderNumber,
+        totalPrice: order.totalPrice,
+        items: order.items,
+        shippingAddress: order.shippingAddress,
+        paymentMethod: order.paymentMethod,
+        deliveryFee: deliveryFee,
+        discount: discount
+      });
 
-    await sendAdminOrderNotification({
-      customerEmail: order.user.email,
-      customerName: order.user.name,
-      orderNumber: order.orderNumber,
-      totalPrice: order.totalPrice,
-      items: order.items,
-      shippingAddress: order.shippingAddress
-    });
+      await sendAdminOrderNotification({
+        customerEmail: order.user.email,
+        customerName: order.user.name,
+        orderNumber: order.orderNumber,
+        totalPrice: order.totalPrice,
+        items: order.items,
+        shippingAddress: order.shippingAddress
+      });
+
+      await notify({
+        userId,
+        message: `New order placed by user ${order.user.name}.`,
+        recipientRole: 'ADMIN',
+        relatedOrderId: order.id,
+      });
+    }
   } catch (emailError) {
     console.error('✉️ Error sending emails:', emailError);
   }
 
-  await notify({
-    userId,
-    message: `New order placed by user ${req.user.name}.`,
-    recipientRole: 'ADMIN',
-    relatedOrderId: order.id,
-  });
-
   res.status(201).json(order);
 });
+
+
 
 // Place Anonymous Order (from Cart) - no authentication required
 export const placeAnonymousOrder = asyncHandler(async (req, res) => {
@@ -439,26 +466,31 @@ export const placeAnonymousOrder = asyncHandler(async (req, res) => {
 
   const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-  const order = await prisma.order.create({
-    data: {
-      orderNumber,
-      customerName,
-      customerEmail,
-      billingAddress: billingAddress || null,
-      shippingAddress,
-      paymentMethod,
-      totalPrice,
-      shippingPrice: deliveryFee,
-      discountAmount: discount,
-      isPaid: false,
-      items: {
-        create: orderItemsData
-      }
+const order = await prisma.order.create({
+  data: {
+    user: {
+      connect: { id: userId } // ✅ Proper relation setup
     },
-    include: {
-      items: { include: { product: true } }
+    orderNumber,
+    customerName,
+    customerEmail,
+    billingAddress: billingAddress || {}, // ✅ Send empty JSON object if null
+    shippingAddress,                      // ✅ Must already be a valid JSON
+    paymentMethod,
+    totalPrice,
+    shippingPrice: deliveryFee,
+    discountAmount: discount,
+    isPaid: false,
+    items: {
+      create: orderItemsData
     }
-  });
+  },
+  include: {
+    items: { include: { product: true } },
+    user: { select: { id: true, name: true, email: true } } // Optional, for email sending
+  }
+});
+
 
   // Clear the anonymous cart
   await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
@@ -495,7 +527,7 @@ export const placeAnonymousOrder = asyncHandler(async (req, res) => {
 
 // Create Order by Admin/Seller
 export const createOrder = asyncHandler(async (req, res) => {
-  const { userId, customerName, customerEmail, customerPhone, billingAddress, shippingAddress, paymentMethod, items, totalPrice, shippingPrice = 0 } = req.body;
+  const { userId, customerName, customerEmail, billingAddress, shippingAddress, paymentMethod, items, totalPrice, shippingPrice = 0 } = req.body;
 
   console.log('Creating order for user:', userId, 'by:', req.user.role, 'userId type:', typeof userId);
 
@@ -557,7 +589,6 @@ export const createOrder = asyncHandler(async (req, res) => {
       orderNumber,
       customerName: customerName || user?.name,
       customerEmail: customerEmail || user?.email,
-      customerPhone: customerPhone || user?.phone || null,
       billingAddress: billingAddress || null,
       shippingAddress: processedShippingAddress, // ✅ Now properly formatted as JSON
       paymentMethod,
