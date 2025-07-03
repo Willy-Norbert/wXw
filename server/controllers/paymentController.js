@@ -81,21 +81,48 @@ export const confirmClientPayment = asyncHandler(async (req, res) => {
     updateData.customerName = req.user.name;
   }
 
-  await prisma.order.update({
+  const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: updateData,
+    include: {
+      user: true,
+      items: { include: { product: true } }
+    }
   });
+
+  // Send payment received email notification
+  try {
+    const { sendPaymentReceivedEmail } = await import('../utils/emailService.js');
+
+    const customerEmail = updatedOrder.customerEmail || updatedOrder.user?.email;
+    const customerName = updatedOrder.customerName || updatedOrder.user?.name || 'Valued Customer';
+
+    if (customerEmail) {
+      await sendPaymentReceivedEmail({
+        customerEmail,
+        customerName,
+        orderNumber: updatedOrder.orderNumber,
+        totalPrice: updatedOrder.totalPrice,
+        items: updatedOrder.items,
+        shippingAddress: updatedOrder.shippingAddress,
+        paymentMethod: updatedOrder.paymentMethod
+      });
+      console.log(`📧 Payment received email sent to: ${customerEmail}`);
+    }
+  } catch (emailError) {
+    console.error('❌ Email send error:', emailError);
+  }
 
   if (req.user) {
     await notify({
       userId: req.user.id,
-      message: `Client confirmed payment for Order ID ${orderId}.`,
+      message: `Payment received for Order ID ${orderId}.`,
       recipientRole: 'ADMIN',
       relatedOrderId: orderId,
     });
   }
 
-  res.json({ message: 'Payment marked as completed. Awaiting admin confirmation.' });
+  res.json({ message: 'Payment received and customer notified.' });
 });
 
 // Admin Confirms Payment - FIXED CART CLEARING
@@ -116,34 +143,40 @@ export const confirmPaymentByAdmin = asyncHandler(async (req, res) => {
 
   console.log(`🛠️ Confirming payment for Order ID: ${orderId}`);
 
-  await prisma.order.update({
+  const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: {
+      isPaid: true,
+      paidAt: new Date(),
       isConfirmedByAdmin: true,
       confirmedAt: new Date(),
     },
+    include: {
+      user: true,
+      items: { include: { product: true } }
+    }
   });
 
   // 📧 Send payment confirmation email
   try {
-    const { sendPaymentConfirmationEmail } = await import('../utils/emailService.js');
+    const { sendPaymentReceivedEmail } = await import('../utils/emailService.js');
 
-    const customerEmail = order.customerEmail || order.user?.email;
-    const customerName = order.customerName || order.user?.name || 'Valued Customer';
+    const customerEmail = updatedOrder.customerEmail || updatedOrder.user?.email;
+    const customerName = updatedOrder.customerName || updatedOrder.user?.name || 'Valued Customer';
 
     if (!customerEmail) {
       console.warn(`⚠️ No email found for Order ID ${orderId}. Email not sent.`);
     } else {
-      await sendPaymentConfirmationEmail({
+      await sendPaymentReceivedEmail({
         customerEmail,
         customerName,
-        orderNumber: order.orderNumber,
-        totalPrice: order.totalPrice,
-        items: order.items,
-        shippingAddress: order.shippingAddress,
-        paymentCode: order.paymentCode
+        orderNumber: updatedOrder.orderNumber,
+        totalPrice: updatedOrder.totalPrice,
+        items: updatedOrder.items,
+        shippingAddress: updatedOrder.shippingAddress,
+        paymentMethod: updatedOrder.paymentMethod
       });
-      console.log(`📧 Payment confirmation email sent to: ${customerEmail}`);
+      console.log(`📧 Payment received email sent to: ${customerEmail}`);
     }
   } catch (emailError) {
     console.error('❌ Email send error:', emailError);
@@ -167,7 +200,7 @@ export const confirmPaymentByAdmin = asyncHandler(async (req, res) => {
 
       await notify({
         userId: order.userId,
-        message: `Admin confirmed your payment for Order ID ${orderId}.`,
+        message: `Payment received for Order ID ${orderId}.`,
         recipientRole: 'BUYER',
         relatedOrderId: orderId,
       });
@@ -179,5 +212,5 @@ export const confirmPaymentByAdmin = asyncHandler(async (req, res) => {
   }
 
   console.log('✅ Payment confirmed by admin');
-  res.json({ message: 'Payment confirmed by admin' });
+  res.json({ message: 'Payment received and customer notified.' });
 });

@@ -90,14 +90,21 @@ const OrderPreview = () => {
   };
 
   const userRole = user?.role?.toLowerCase();
-  const canEdit = userRole === 'ADMIN' || userRole === 'seller';
+  const canEdit = userRole === 'admin' || userRole === 'seller';
   const isSeller = userRole === 'seller';
-  const isAdmin = userRole === 'ADMIN';
+  const isAdmin = userRole === 'admin';
 
   // Filter items for sellers - show only their products
   const displayItems = isSeller 
     ? order.items?.filter((item: any) => item.product?.createdById === user?.id) || []
     : order.items || [];
+
+  // Calculate totals with proper discount handling
+  const itemsTotal = displayItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+  const discountAmount = order.discountAmount || 0;
+  const shippingCost = order.shippingPrice || 0;
+  const taxAmount = order.taxPrice || 0;
+  const finalTotal = itemsTotal - discountAmount + shippingCost + taxAmount;
 
   return (
     <DashboardLayout currentPage="orders">
@@ -135,7 +142,7 @@ const OrderPreview = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Only show Order Status card for admins */}
+          {/* Order Status card for admins */}
           {isAdmin && (
             <div className="lg:col-span-1">
               <Card>
@@ -149,7 +156,9 @@ const OrderPreview = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">Payment Status</p>
-                      <p className="text-sm text-gray-600">Mark as paid/unpaid</p>
+                      <p className="text-sm text-gray-600">
+                        {order.isPaid ? 'Payment Received' : 'Awaiting Payment'}
+                      </p>
                     </div>
                     <Switch
                       checked={order.isPaid}
@@ -161,13 +170,35 @@ const OrderPreview = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">Delivery Status</p>
-                      <p className="text-sm text-gray-600">Mark as delivered</p>
+                      <p className="text-sm text-gray-600">
+                        {order.isDelivered ? 'Delivered' : 'Pending Delivery'}
+                      </p>
                     </div>
                     <Switch
                       checked={order.isDelivered}
                       onCheckedChange={handleDeliveryToggle}
                       disabled={updateStatusMutation.isPending}
                     />
+                  </div>
+
+                  {/* Payment Method Info for Admin */}
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="text-sm font-medium text-gray-800">Payment Method</p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <CreditCard className="w-4 h-4" />
+                      <span className="text-sm">
+                        {order.paymentMethod === 'PAY_ON_DELIVERY' ? 'Pay on Delivery' : 
+                         order.paymentMethod === 'MTN' ? 'MTN Mobile Money' : 
+                         order.paymentMethod}
+                      </span>
+                    </div>
+                    {order.paymentMethod === 'MTN' && (
+                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                        <p className="text-xs text-blue-600">
+                          <strong>MoMo Code:</strong> 0784720884
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {order.isConfirmedByAdmin && (
@@ -279,9 +310,31 @@ const OrderPreview = () => {
                 </div>
 
                 {!isSeller && (
-                  <div className="border-t pt-4 mt-4">
-                    <div className="flex justify-between items-center text-lg font-bold">
-                      <span>Total Amount (discount + delivery fee included)</span>
+                  <div className="border-t pt-4 mt-4 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span>Items Total:</span>
+                      <span>{itemsTotal.toLocaleString()} Rwf</span>
+                    </div>
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between items-center text-green-600">
+                        <span>Discount:</span>
+                        <span>-{discountAmount.toLocaleString()} Rwf</span>
+                      </div>
+                    )}
+                    {shippingCost > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span>Shipping:</span>
+                        <span>+{shippingCost.toLocaleString()} Rwf</span>
+                      </div>
+                    )}
+                    {taxAmount > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span>Tax:</span>
+                        <span>+{taxAmount.toLocaleString()} Rwf</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
+                      <span>Total Amount:</span>
                       <span>{order.totalPrice?.toLocaleString()} Rwf</span>
                     </div>
                   </div>
