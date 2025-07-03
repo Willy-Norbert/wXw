@@ -16,13 +16,18 @@ const APP_CONSTANTS = {
 
 // Get Order by ID (Admin/Seller)
 export const getOrderById = asyncHandler(async (req, res) => {
+  console.log('Request params:', req.params);
+  
   const orderId = parseInt(req.params.id);
+  if (isNaN(orderId)) {
+    res.status(400);
+    throw new Error('Invalid order ID');
+  }
 
   console.log('Getting order by ID:', orderId, 'for user role:', req.user?.role);
 
   let whereClause = { id: orderId };
-  
-  // If seller, only get orders for their products
+
   if (req.user.role.toLowerCase() === 'seller') {
     whereClause = {
       id: orderId,
@@ -40,8 +45,8 @@ export const getOrderById = asyncHandler(async (req, res) => {
     where: whereClause,
     include: {
       user: { select: { id: true, name: true, email: true } },
-      items: { 
-        include: { 
+      items: {
+        include: {
           product: {
             include: {
               createdBy: {
@@ -53,7 +58,7 @@ export const getOrderById = asyncHandler(async (req, res) => {
               }
             }
           }
-        } 
+        }
       }
     }
   });
@@ -85,6 +90,15 @@ export const addToCart = asyncHandler(async (req, res) => {
   if (req.user && req.user.id) {
     // Authenticated user - find or create user cart
     const userId = req.user.id;
+    if (!userId || typeof userId !== 'number') {
+  res.status(400);
+  throw new Error('Valid user ID is required');
+}
+if (!req.user || !req.user.id) {
+  res.status(401);
+  throw new Error('User not authenticated');
+}
+
     console.log(' Handling authenticated user cart for userId:', userId);
     
     cart = await prisma.cart.findUnique({ where: { userId } });

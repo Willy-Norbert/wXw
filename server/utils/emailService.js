@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
+const transport = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'nberitha12@gmail.com',
@@ -61,7 +61,7 @@ export const sendWelcomeEmail = async (userData) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await transport.sendMail(mailOptions);
     console.log('✅ Welcome email sent to:', email);
   } catch (error) {
     console.error('❌ Error sending welcome email:', error);
@@ -122,7 +122,7 @@ export const sendSellerWelcomeEmail = async (userData) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await transport.sendMail(mailOptions);
     console.log('✅ Welcome seller email sent to:', email);
   } catch (error) {
     console.error('❌ Error sending seller welcome email:', error);
@@ -202,7 +202,7 @@ export const sendSellerStatusEmail = async (sellerData, status) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await transport.sendMail(mailOptions);
     console.log('✅ Seller status email sent to:', email);
   } catch (error) {
     console.error('❌ Error sending seller status email:', error);
@@ -278,7 +278,7 @@ export const sendOrderConfirmationEmail = async (orderData) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await transport.sendMail(mailOptions);
     console.log('✅ Order confirmation email sent to:', customerEmail);
   } catch (error) {
     console.error('❌ Error sending order confirmation email:', error);
@@ -332,7 +332,7 @@ export const sendOrderCancellationEmail = async (orderData) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await transport.sendMail(mailOptions);
     console.log('✅ Order cancellation email sent to:', customerEmail);
   } catch (error) {
     console.error('❌ Error sending order cancellation email:', error);
@@ -378,7 +378,7 @@ export const sendAdminOrderNotification = async (orderData, adminEmails = ['nber
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await transport.sendMail(mailOptions);
     console.log('✅ Admin order notification sent');
   } catch (error) {
     console.error('❌ Error sending admin order notification:', error);
@@ -460,7 +460,7 @@ export const sendSellerOrderConfirmationEmail = async (orderData) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await transport.sendMail(mailOptions);
     console.log('✅ Seller order confirmation email sent to:', customerEmail);
   } catch (error) {
     console.error('❌ Error sending seller order confirmation email:', error);
@@ -511,7 +511,7 @@ export const sendPaymentConfirmationEmail = async (orderData) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await transport.sendMail(mailOptions);
     console.log('✅ Payment confirmation email sent to:', customerEmail);
   } catch (error) {
     console.error('❌ Error sending payment confirmation email:', error);
@@ -541,7 +541,7 @@ export const sendOrderStatusUpdateEmail = async (toEmail, status, productName) =
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await transport.sendMail(mailOptions);
     console.log('✅ Order status update email sent to:', toEmail);
   } catch (error) {
     console.error('❌ Error sending order status update email:', error);
@@ -559,7 +559,7 @@ export const sendDeliveryStatusUpdateEmail = async ({
   updateDateTime,
   orderViewLink
 }) => {
-  const transporter = nodemailer.createTransporter({
+  const transport = nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: 'nberitha12@gmail.com',
@@ -626,7 +626,7 @@ export const sendDeliveryStatusUpdateEmail = async ({
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await transport.sendMail(mailOptions);
     console.log('📧 Delivery status update email sent successfully to:', customerEmail);
   } catch (error) {
     console.error('❌ Error sending delivery status update email:', error);

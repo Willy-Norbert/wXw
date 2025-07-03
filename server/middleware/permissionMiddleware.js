@@ -3,9 +3,14 @@ import prisma from '../prismaClient.js';
 
 export const checkSellerPermission = (requiredPermission) => {
   return asyncHandler(async (req, res, next) => {
-    // Only apply to sellers
-    if (req.user.role.toLowerCase() !== 'seller') {
+    // Safe checks for user and role
+    if (!req.user || !req.user.role || req.user.role.toLowerCase() !== 'seller') {
       return next();
+    }
+
+    if (!req.user.id) {
+      res.status(401);
+      throw new Error('User ID missing from request');
     }
 
     const seller = await prisma.user.findUnique({

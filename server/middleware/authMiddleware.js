@@ -1,4 +1,3 @@
-
 import jwt from 'jsonwebtoken';
 import asyncHandler from 'express-async-handler';
 import prisma from '../prismaClient.js';
@@ -22,7 +21,14 @@ export const protect = asyncHandler(async (req, res, next) => {
       console.log('Auth middleware: Token extracted, length:', token.length);
       
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('Auth middleware: Token decoded successfully, user ID:', decoded.id);
+      console.log('Auth middleware: Token decoded successfully:', decoded);
+
+      // ✅ ADD THIS CHECK
+      if (!decoded?.id) {
+        console.log('Auth middleware: Decoded token missing ID');
+        res.status(401);
+        throw new Error('Invalid token: missing user ID');
+      }
 
       // Add retry logic for database connection
       let user = null;
@@ -145,13 +151,32 @@ export const errorHandler = (err, req, res, next) => {
     stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
   });
 };
+
+// Optional protect middleware for public routes with optional auth
 export const optionalProtect = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
       const token = authHeader.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+
+      // ✅ ADD THIS CHECK
+      if (!decoded?.id) {
+        console.log('optionalProtect: Decoded token missing ID');
+        return next();
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          sellerStatus: true,
+          isActive: true,
+        },
+      });
       if (user) req.user = user;
     } catch (error) {
       console.log('optionalProtect: invalid token, ignoring');

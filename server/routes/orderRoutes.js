@@ -1,3 +1,4 @@
+import prisma from '../utils/prismaClient.js';
 
 import express from 'express';
 import {
@@ -42,12 +43,32 @@ orderRouter.get('/all', protect, authorizeRoles('admin', 'seller'), getAllOrders
 
 // Individual order operations
 orderRouter.route('/:id')
-  .get(protect, authorizeRoles('admin', 'seller'), getOrderById)
+  .get(protect, authorizeRoles('admin', 'seller'), getOrderById) 
   .put(protect, authorizeRoles('admin', 'seller'), checkSellerPermission('canEditOrder'), updateOrder)
-  .delete(protect, authorizeRoles('admin', 'seller'), checkSellerPermission('canDeleteOrder'), deleteOrder);
+  .delete(protect, authorizeRoles('admin', 'seller'), checkSellerPermission('canDeleteOrder'), deleteOrder) 
+  ;
 
 // Order status updates with permission checks
 orderRouter.put('/:id/status', protect, authorizeRoles('admin', 'seller'), updateOrderStatus);
 orderRouter.put('/:id/confirm-payment', protect, authorizeRoles('admin', 'seller'), confirmOrderPayment);
+
+// Delete all orders - Admin only
+orderRouter.delete(
+  '/',
+  protect,
+  authorizeRoles('admin'),
+  async (req, res, next) => {
+    try {
+      // Delete all order items first (if you have order items related to orders)
+      await prisma.orderItem.deleteMany({});
+      // Delete all orders
+      await prisma.order.deleteMany({});
+      res.json({ message: 'All orders deleted successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 
 export default orderRouter;
