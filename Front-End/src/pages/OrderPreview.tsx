@@ -281,7 +281,7 @@ const OrderPreview = () => {
                 {!isSeller && (
                   <div className="border-t pt-4 mt-4">
                     <div className="flex justify-between items-center text-lg font-bold">
-                      <span>Total Amount</span>
+                      <span>Total Amount discount removed (+1200)</span>
                       <span>{order.totalPrice?.toLocaleString()} Rwf</span>
                     </div>
                   </div>

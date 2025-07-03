@@ -332,7 +332,7 @@ const Orders = () => {
             {(isAdmin) && (
               <ThreeStepOrderCreation isOpen={isCreateOrderOpen} onClose={() => setIsCreateOrderOpen(false)} />
             )}
-               {(isAdmin || (isSeller && sellerPermissions.canCreateCustomers)) && (
+               {((isSeller && sellerPermissions.canCreateCustomers)) && (
               <ThreeStepSellerOrderCreation isOpen={isCreateOrderOpen} onClose={() => setIsCreateOrderOpen(false)} />
             )}
 
