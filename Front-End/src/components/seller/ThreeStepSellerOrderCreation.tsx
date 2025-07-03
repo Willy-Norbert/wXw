@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -96,7 +95,6 @@ export const ThreeStepSellerOrderCreation: React.FC<ThreeStepSellerOrderCreation
       resetForm();
     },
     onError: (error: any) => {
-      console.error('Order creation error:', error);
       toast({
         title: "Error creating order",
         description: error.response?.data?.message || "Failed to create order",
@@ -231,34 +229,10 @@ export const ThreeStepSellerOrderCreation: React.FC<ThreeStepSellerOrderCreation
       return;
     }
 
-    // Fix: Ensure we have proper customer data
-    const customerName = isCreatingNewCustomer ? newCustomerData.customerName : selectedCustomer?.name;
-    const customerEmail = isCreatingNewCustomer ? newCustomerData.customerEmail : selectedCustomer?.email;
-    const customerPhone = isCreatingNewCustomer ? newCustomerData.customerPhone : selectedCustomer?.phone;
-
-    if (!customerName || !customerEmail) {
-      toast({
-        title: "Missing customer information",
-        description: "Customer name and email are required",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    console.log('Creating order with data:', {
-      customerName,
-      customerEmail,
-      customerPhone,
-      shippingAddress: finalShippingAddress,
-      paymentMethod: orderData.paymentMethod,
-      items: validItems,
-      totalPrice: orderData.totalPrice
-    });
-
     const orderPayload = {
-      customerName,
-      customerEmail,
-      customerPhone: customerPhone || '',
+      customerName: isCreatingNewCustomer ? newCustomerData.customerName : selectedCustomer?.name || '',
+      customerEmail: isCreatingNewCustomer ? newCustomerData.customerEmail : selectedCustomer?.email || '',
+      customerPhone: isCreatingNewCustomer ? newCustomerData.customerPhone : selectedCustomer?.phone || '',
       shippingAddress: finalShippingAddress,
       paymentMethod: orderData.paymentMethod,
       items: validItems.map(item => ({
@@ -266,7 +240,10 @@ export const ThreeStepSellerOrderCreation: React.FC<ThreeStepSellerOrderCreation
         quantity: item.quantity,
         price: item.price
       })),
-      totalPrice: orderData.totalPrice
+      totalPrice: orderData.totalPrice,
+      // Add seller info for the confirmation message
+      sellerName: user?.name || 'Your Seller',
+      sellerEmail: user?.email || ''
     };
 
     createOrderMutation.mutate(orderPayload);
