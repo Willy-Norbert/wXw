@@ -534,15 +534,32 @@ export const createOrder = asyncHandler(async (req, res) => {
   // Generate order number
   const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
+  // Ensure shippingAddress is a proper JSON object
+  let processedShippingAddress;
+  if (typeof shippingAddress === 'string') {
+    try {
+      processedShippingAddress = JSON.parse(shippingAddress);
+    } catch (e) {
+      // If it's just a string like "kigali", wrap it in an object
+      processedShippingAddress = { address: shippingAddress };
+    }
+  } else if (typeof shippingAddress === 'object' && shippingAddress !== null) {
+    processedShippingAddress = shippingAddress;
+  } else {
+    processedShippingAddress = { address: shippingAddress || '' };
+  }
+
   const order = await prisma.order.create({
     data: {
-      ...(userId && { userId }),
+      ...(userId && { 
+        user: { connect: { id: userId } } // ✅ Proper relation syntax
+      }),
       orderNumber,
       customerName: customerName || user?.name,
       customerEmail: customerEmail || user?.email,
       customerPhone: customerPhone || user?.phone || null,
       billingAddress: billingAddress || null,
-      shippingAddress,
+      shippingAddress: processedShippingAddress, // ✅ Now properly formatted as JSON
       paymentMethod,
       totalPrice,
       shippingPrice: shippingPrice || 0,

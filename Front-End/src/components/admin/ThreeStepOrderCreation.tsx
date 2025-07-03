@@ -238,9 +238,14 @@ export const ThreeStepOrderCreation: React.FC<ThreeStepOrderCreationProps> = ({
 
     console.log('Creating order with userId:', selectedUserId, 'type:', typeof selectedUserId);
 
+    // Ensure shippingAddress is formatted as JSON object
+    const shippingAddressObj = typeof orderData.shippingAddress === 'string' 
+      ? { address: orderData.shippingAddress }
+      : orderData.shippingAddress;
+
     createOrderMutation.mutate({
       userId: selectedUserId,
-      shippingAddress: orderData.shippingAddress,
+      shippingAddress: shippingAddressObj,
       paymentMethod: orderData.paymentMethod,
       items: validItems.map(item => ({
         productId: item.productId,
