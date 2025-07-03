@@ -468,14 +468,11 @@ export const placeAnonymousOrder = asyncHandler(async (req, res) => {
 
 const order = await prisma.order.create({
   data: {
-    user: {
-      connect: { id: userId } // ✅ Proper relation setup
-    },
     orderNumber,
     customerName,
     customerEmail,
-    billingAddress: billingAddress || {}, // ✅ Send empty JSON object if null
-    shippingAddress,                      // ✅ Must already be a valid JSON
+    billingAddress: billingAddress || {},
+    shippingAddress,
     paymentMethod,
     totalPrice,
     shippingPrice: deliveryFee,
@@ -487,7 +484,7 @@ const order = await prisma.order.create({
   },
   include: {
     items: { include: { product: true } },
-    user: { select: { id: true, name: true, email: true } } // Optional, for email sending
+    user: { select: { id: true, name: true, email: true } }
   }
 });
 
