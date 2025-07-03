@@ -484,7 +484,9 @@ export const ThreeStepOrderCreation: React.FC<ThreeStepOrderCreationProps> = ({
             <strong>Items:</strong> {orderData.items.length}
           </p>
           <p className="text-sm mb-2">
-            <strong>Total Amount:</strong> {orderData.totalPrice.toLocaleString()} Rwf
+            <strong>Total Amount:</strong> {orderData.items.filter(item => item.productId > 0 && item.quantity > 0)
+              .reduce((sum, item) => sum + (item.price * item.quantity), 0)
+              .toLocaleString()} Rwf
           </p>
           <p className="text-sm mb-2">
             <strong>Shipping Address:</strong> {orderData.shippingAddress || 'Not provided'}

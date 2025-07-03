@@ -85,14 +85,19 @@ export const OrderUpdateDialog: React.FC<OrderUpdateDialogProps> = ({
   const handleUpdateOrder = () => {
     if (!order) return;
 
+    // Calculate total when updating
+    const validItems = editingItems ? orderItems.filter(item => item.productId && item.quantity > 0) : undefined;
+    const newTotal = validItems ? validItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) : order.totalPrice;
+
     const updateData = {
       shippingAddress,
       paymentMethod,
-      items: editingItems ? orderItems.map(item => ({
+      totalPrice: newTotal,
+      items: validItems?.map(item => ({
         productId: item.productId,
         quantity: item.quantity,
         price: item.price
-      })) : undefined
+      }))
     };
 
     updateOrderMutation.mutate({ id: order.id, data: updateData });

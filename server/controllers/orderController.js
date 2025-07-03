@@ -381,7 +381,7 @@ export const placeOrder = asyncHandler(async (req, res) => {
 
 // Place Anonymous Order (from Cart) - no authentication required
 export const placeAnonymousOrder = asyncHandler(async (req, res) => {
-  const { customerName, customerEmail, shippingAddress, paymentMethod, cartId } = req.body;
+  const { customerName, customerEmail, billingAddress, shippingAddress, paymentMethod, cartId } = req.body;
 
   if (!cartId) {
     res.status(400);
@@ -426,6 +426,7 @@ export const placeAnonymousOrder = asyncHandler(async (req, res) => {
       orderNumber,
       customerName,
       customerEmail,
+      billingAddress: billingAddress || null,
       shippingAddress,
       paymentMethod,
       totalPrice,
@@ -476,7 +477,7 @@ export const placeAnonymousOrder = asyncHandler(async (req, res) => {
 
 // Create Order by Admin/Seller
 export const createOrder = asyncHandler(async (req, res) => {
-  const { userId, shippingAddress, paymentMethod, items, totalPrice, shippingPrice = 0 } = req.body;
+  const { userId, billingAddress, shippingAddress, paymentMethod, items, totalPrice, shippingPrice = 0 } = req.body;
 
   console.log('Creating order for user:', userId, 'by:', req.user.role);
 
@@ -510,6 +511,7 @@ export const createOrder = asyncHandler(async (req, res) => {
     data: {
       userId,
       orderNumber,
+      billingAddress: billingAddress || null,
       shippingAddress,
       paymentMethod,
       totalPrice,
@@ -527,9 +529,9 @@ export const createOrder = asyncHandler(async (req, res) => {
 
   console.log('Order created successfully by admin/seller:', order.id);
 
-  // Send seller order confirmation email to customer
-  if (req.user.role.toLowerCase() === 'seller') {
-    try {
+  // FIXED: Send order confirmation email to customer regardless of who creates it
+  try {
+    if (req.user.role.toLowerCase() === 'seller') {
       await sendSellerOrderConfirmationEmail({
         customerEmail: user.email,
         customerName: user.name,
@@ -542,9 +544,23 @@ export const createOrder = asyncHandler(async (req, res) => {
         sellerBusinessName: req.user.businessName
       });
       console.log('✅ Seller order confirmation email sent to customer:', user.email);
-    } catch (emailError) {
-      console.error('❌ Error sending seller order confirmation email:', emailError);
+    } else {
+      // Admin creating order - send regular confirmation email
+      await sendOrderConfirmationEmail({
+        customerEmail: user.email,
+        customerName: user.name,
+        orderNumber: order.orderNumber,
+        totalPrice: order.totalPrice,
+        items: order.items,
+        shippingAddress: order.shippingAddress,
+        paymentMethod: order.paymentMethod,
+        deliveryFee: shippingPrice || 0,
+        discount: 0
+      });
+      console.log('✅ Admin order confirmation email sent to customer:', user.email);
     }
+  } catch (emailError) {
+    console.error('❌ Error sending order confirmation email:', emailError);
   }
 
   await notify({

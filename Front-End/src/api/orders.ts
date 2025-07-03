@@ -45,6 +45,7 @@ export interface PlaceOrderData {
 export interface PlaceAnonymousOrderData {
   customerName: string;
   customerEmail: string;
+  billingAddress?: string;
   shippingAddress: string;
   paymentMethod: string;
   cartId: number;
@@ -54,6 +55,7 @@ export interface CreateOrderData {
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
+  billingAddress?: string;
   shippingAddress: string;
   paymentMethod: string;
   items: Array<{

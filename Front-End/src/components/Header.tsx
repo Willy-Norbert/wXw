@@ -42,7 +42,18 @@ const Header = () => {
   };
 
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    // Auto-search as user types (debounced)
+    if (value.trim()) {
+      const timeoutId = setTimeout(() => {
+        navigate(`/products?search=${encodeURIComponent(value.trim())}`);
+      }, 800); // 800ms debounce
+      
+      // Clear previous timeout
+      return () => clearTimeout(timeoutId);
+    }
   };
 
   const handleBackToHome = () => {

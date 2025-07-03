@@ -191,6 +191,7 @@ model Order {
   orderNumber         String     @unique @db.VarChar(50)
   customerName        String?
   customerEmail       String?
+  billingAddress      Json?
   shippingAddress     Json
   discountAmount      Decimal? 
   paymentCode         String?    @db.VarChar(100)

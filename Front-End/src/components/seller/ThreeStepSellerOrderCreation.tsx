@@ -66,18 +66,22 @@ export const ThreeStepSellerOrderCreation: React.FC<ThreeStepSellerOrderCreation
   const queryClient = useQueryClient();
 
   // Get seller's customers
-  const { data: customers = [], isLoading: customersLoading } = useQuery({
+  const { data: customersResponse, isLoading: customersLoading } = useQuery({
     queryKey: ['seller-customers'],
     queryFn: getSellerCustomers,
     enabled: isOpen && currentStep === 1,
   });
 
   // Get seller's products
-  const { data: products = [], isLoading: productsLoading } = useQuery({
+  const { data: productsResponse, isLoading: productsLoading } = useQuery({
     queryKey: ['seller-products'],
     queryFn: getSellerProducts,
     enabled: isOpen && currentStep === 2,
   });
+
+  // Extract data from API responses
+  const customers = customersResponse?.data || [];
+  const products = productsResponse?.data || [];
 
   const createOrderMutation = useMutation({
     mutationFn: createOrder,
@@ -485,7 +489,11 @@ export const ThreeStepSellerOrderCreation: React.FC<ThreeStepSellerOrderCreation
         <div className="bg-purple-50 p-4 rounded-lg">
           <div className="flex justify-between items-center">
             <span className="font-semibold">Total Amount:</span>
-            <span className="text-xl font-bold text-purple-600">{orderData.totalPrice.toLocaleString()} Rwf</span>
+            <span className="text-xl font-bold text-purple-600">
+              {orderData.items.filter(item => item.productId > 0 && item.quantity > 0)
+                .reduce((sum, item) => sum + (item.price * item.quantity), 0)
+                .toLocaleString()} Rwf
+            </span>
           </div>
         </div>
       </div>
@@ -578,7 +586,11 @@ export const ThreeStepSellerOrderCreation: React.FC<ThreeStepSellerOrderCreation
           <div className="border-t pt-3 mt-3">
             <div className="flex justify-between items-center">
               <span className="text-lg font-bold">Total Amount:</span>
-              <span className="text-xl font-bold text-purple-600">{orderData.totalPrice.toLocaleString()} Rwf</span>
+              <span className="text-xl font-bold text-purple-600">
+                {orderData.items.filter(item => item.productId > 0 && item.quantity > 0)
+                  .reduce((sum, item) => sum + (item.price * item.quantity), 0)
+                  .toLocaleString()} Rwf
+              </span>
             </div>
           </div>
         </div>

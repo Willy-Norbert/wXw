@@ -36,6 +36,10 @@ const Checkout = () => {
     email: '',
     location: '',
     streetLine: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: '',
     shippingAddress: ''
   });
 
@@ -85,10 +89,11 @@ const Checkout = () => {
       return;
     }
 
-    if (!formData.firstName || !formData.lastName || !formData.location || !formData.streetLine) {
+    if (!formData.firstName || !formData.lastName || !formData.location || !formData.streetLine || 
+        !formData.city || !formData.state || !formData.postalCode || !formData.country) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required billing address fields",
         variant: "destructive",
       });
       return;
@@ -104,9 +109,10 @@ const Checkout = () => {
       return;
     }
 
+    const billingAddress = `${formData.streetLine}, ${formData.city}, ${formData.state}, ${formData.postalCode}, ${formData.country}`;
     const shippingAddress = sameAsBilling 
-      ? `${formData.streetLine}, ${formData.location}`
-      : formData.shippingAddress || `${formData.streetLine}, ${formData.location}`;
+      ? billingAddress
+      : formData.shippingAddress || billingAddress;
 
     if (auth?.user) {
       // Authenticated user - use existing placeOrder
@@ -189,9 +195,10 @@ const Checkout = () => {
   const guestCheckoutData = {
     customerName: `${formData.firstName} ${formData.lastName}`,
     customerEmail: formData.email,
+    billingAddress: `${formData.streetLine}, ${formData.city}, ${formData.state}, ${formData.postalCode}, ${formData.country}`,
     shippingAddress: sameAsBilling 
-      ? `${formData.streetLine}, ${formData.location}`
-      : formData.shippingAddress || `${formData.streetLine}, ${formData.location}`,
+      ? `${formData.streetLine}, ${formData.city}, ${formData.state}, ${formData.postalCode}, ${formData.country}`
+      : formData.shippingAddress || `${formData.streetLine}, ${formData.city}, ${formData.state}, ${formData.postalCode}, ${formData.country}`,
     paymentMethod,
     cartId: cart?.id || 0
   };
@@ -268,10 +275,44 @@ const Checkout = () => {
                 )}
               </div>
 
-              {/* Shipping Address */}
+              {/* Billing Address */}
               <div>
                 <div className="flex items-center mb-4">
                   <span className="w-6 h-6 bg-black text-white rounded-full flex items-center justify-center text-sm mr-3">2</span>
+                  <h2 className="text-xl font-semibold">Billing Address</h2>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <Input 
+                    placeholder="City *" 
+                    value={formData.city || ''}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                  />
+                  <Input 
+                    placeholder="State/Province *" 
+                    value={formData.state || ''}
+                    onChange={(e) => handleInputChange('state', e.target.value)}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <Input 
+                    placeholder="Postal Code *" 
+                    value={formData.postalCode || ''}
+                    onChange={(e) => handleInputChange('postalCode', e.target.value)}
+                  />
+                  <Input 
+                    placeholder="Country *" 
+                    value={formData.country || ''}
+                    onChange={(e) => handleInputChange('country', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Shipping Address */}
+              <div>
+                <div className="flex items-center mb-4">
+                  <span className="w-6 h-6 bg-black text-white rounded-full flex items-center justify-center text-sm mr-3">3</span>
                   <h2 className="text-xl font-semibold">Shipping Address</h2>
                 </div>
                 
@@ -296,7 +337,7 @@ const Checkout = () => {
               {/* Payment Method */}
               <div>
                 <div className="flex items-center mb-4">
-                  <span className="w-6 h-6 bg-black text-white rounded-full flex items-center justify-center text-sm mr-3">3</span>
+                  <span className="w-6 h-6 bg-black text-white rounded-full flex items-center justify-center text-sm mr-3">4</span>
                   <h2 className="text-xl font-semibold">Payment Method</h2>
                 </div>
                 

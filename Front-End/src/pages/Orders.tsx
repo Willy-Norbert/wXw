@@ -191,7 +191,12 @@ const Orders = () => {
                         <div className="font-medium">{order.user?.name || order.customerName}</div>
                         <div className="text-sm text-gray-500">{order.user?.email || order.customerEmail}</div>
                       </TableCell>
-                      <TableCell>{order.items?.length || 0}</TableCell>
+                      <TableCell>
+                        {isSeller 
+                          ? order.items?.filter((item: any) => item.product?.createdById === user?.id).length || 0
+                          : order.items?.length || 0
+                        }
+                      </TableCell>
                       <TableCell>{order.totalPrice?.toLocaleString() || 0} Rwf</TableCell>
                       <TableCell>
                         <Badge variant={order.isPaid ? 'default' : 'secondary'}>

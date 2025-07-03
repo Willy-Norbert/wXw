@@ -211,7 +211,7 @@ export const sendSellerStatusEmail = async (sellerData, status) => {
 };
 
 export const sendOrderConfirmationEmail = async (orderData) => {
-  const { customerEmail, customerName, orderNumber, totalPrice, items, shippingAddress, paymentMethod, deliveryFee, discount } = orderData;
+  const { customerEmail, customerName, orderNumber, totalPrice, items, shippingAddress, billingAddress, paymentMethod, deliveryFee, discount } = orderData;
   
   const itemsList = items.map(item => 
     `• ${item.product.name} x${item.quantity} - ${(item.price * item.quantity).toLocaleString()} Rwf`
@@ -258,6 +258,7 @@ export const sendOrderConfirmationEmail = async (orderData) => {
           ${discount ? `<p><strong>Discount:</strong> -${discount.toLocaleString()} Rwf</p>` : ''}
           ${deliveryFee ? `<p><strong>Delivery Fee:</strong> ${deliveryFee.toLocaleString()} Rwf</p>` : ''}
           <p><strong>Total Amount:</strong> ${totalPrice.toLocaleString()} Rwf</p>
+          ${billingAddress ? `<p><strong>Billing Address:</strong> ${typeof billingAddress === 'string' ? billingAddress : JSON.stringify(billingAddress)}</p>` : ''}
           <p><strong>Shipping Address:</strong> ${shippingAddress}</p>
           
           <h4>Items Ordered:</h4>
