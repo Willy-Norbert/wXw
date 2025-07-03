@@ -232,8 +232,20 @@ const OrderPreview = () => {
                     {order.paymentMethod === 'MTN' && (
                       <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
                         <p className="text-sm text-blue-600">
-                          <strong>MoMo Code:</strong> 0784720884
+                          <strong>MoMo Code:</strong> {order.paymentCode || '0784720884'}
                         </p>
+                      </div>
+                    )}
+                    {isAdmin && (
+                      <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded">
+                        <h4 className="font-medium text-sm mb-2">Payment & Delivery Status</h4>
+                        <div className="space-y-1 text-xs">
+                          <p><strong>Payment Status:</strong> <span className={`${order.isPaid ? 'text-green-600' : 'text-orange-600'}`}>{order.isPaid ? 'Paid' : 'Pending Payment'}</span></p>
+                          <p><strong>Delivery Status:</strong> <span className={`${order.isDelivered ? 'text-green-600' : 'text-orange-600'}`}>{order.isDelivered ? 'Delivered' : 'Pending Delivery'}</span></p>
+                          {order.isPaid && order.paidAt && <p><strong>Paid At:</strong> {new Date(order.paidAt).toLocaleString()}</p>}
+                          {order.isDelivered && order.deliveredAt && <p><strong>Delivered At:</strong> {new Date(order.deliveredAt).toLocaleString()}</p>}
+                          {order.isConfirmedByAdmin && order.confirmedAt && <p><strong>Admin Confirmed:</strong> {new Date(order.confirmedAt).toLocaleString()}</p>}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -279,9 +291,27 @@ const OrderPreview = () => {
                 </div>
 
                 {!isSeller && (
-                  <div className="border-t pt-4 mt-4">
-                    <div className="flex justify-between items-center text-lg font-bold">
-                      <span>Total Amount (discount + delivery fee included)</span>
+                  <div className="border-t pt-4 mt-4 space-y-2">
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Subtotal:</span>
+                        <span>{((order.totalPrice || 0) - (order.shippingPrice || 0) + (order.discountAmount || 0)).toLocaleString()} Rwf</span>
+                      </div>
+                      {order.discountAmount && order.discountAmount > 0 && (
+                        <div className="flex justify-between items-center text-sm text-green-600">
+                          <span>Discount:</span>
+                          <span>-{order.discountAmount.toLocaleString()} Rwf</span>
+                        </div>
+                      )}
+                      {order.shippingPrice && order.shippingPrice > 0 && (
+                        <div className="flex justify-between items-center text-sm">
+                          <span>Delivery Fee:</span>
+                          <span>{order.shippingPrice.toLocaleString()} Rwf</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
+                      <span>Total Amount:</span>
                       <span>{order.totalPrice?.toLocaleString()} Rwf</span>
                     </div>
                   </div>

@@ -497,7 +497,7 @@ export const sendPaymentConfirmationEmail = async (orderData) => {
         </div>
         
         <div style="background-color: #d4edda; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #155724;">✅ Payment Status: CONFIRMED</h3>
+          <h3 style="color: #155724;">✅ Payment Status: Paid</h3>
           <p>Your order is now being prepared for shipment. You will receive tracking information once your order has been dispatched.</p>
         </div>
         

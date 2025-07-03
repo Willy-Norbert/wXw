@@ -493,7 +493,13 @@ export const placeAnonymousOrder = asyncHandler(async (req, res) => {
 export const createOrder = asyncHandler(async (req, res) => {
   const { userId, billingAddress, shippingAddress, paymentMethod, items, totalPrice, shippingPrice = 0 } = req.body;
 
-  console.log('Creating order for user:', userId, 'by:', req.user.role);
+  console.log('Creating order for user:', userId, 'by:', req.user.role, 'userId type:', typeof userId);
+
+  // Validate userId is provided and is a number
+  if (!userId || typeof userId !== 'number' || isNaN(userId)) {
+    res.status(400);
+    throw new Error('Valid user ID is required');
+  }
 
   // Validate user exists
   const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -1026,9 +1032,9 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
         });
         console.log('✅ Delivery status email sent successfully to:', customerEmail);
       }
-      // Send payment confirmation email for payment updates
+      // Send payment confirmation email for payment updates (FIXED to work without admin confirmation)
       else if (isPaid === true) {
-        console.log('📧 Sending payment confirmation email...');
+        console.log('📧 Sending payment confirmation email for payment status change...');
         await sendPaymentConfirmationEmail({
           customerEmail,
           customerName,
@@ -1039,7 +1045,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
           paymentCode: updatedOrder.paymentCode || '0784720884'
         });
         console.log('✅ Payment confirmation email sent successfully to:', customerEmail);
-      } 
+      }
       // Send general status update email for other status changes
       else if (status !== undefined) {
         console.log('📧 Sending general status update email...');

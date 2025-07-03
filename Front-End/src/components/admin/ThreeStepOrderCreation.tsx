@@ -226,6 +226,18 @@ export const ThreeStepOrderCreation: React.FC<ThreeStepOrderCreationProps> = ({
       return;
     }
 
+    // Ensure we have a valid selectedUserId
+    if (!selectedUserId || typeof selectedUserId !== 'number' || isNaN(selectedUserId)) {
+      toast({
+        title: "Invalid user selection",
+        description: "Please select a valid customer",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log('Creating order with userId:', selectedUserId, 'type:', typeof selectedUserId);
+
     createOrderMutation.mutate({
       userId: selectedUserId,
       shippingAddress: orderData.shippingAddress,
