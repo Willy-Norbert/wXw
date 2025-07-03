@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateOrder, updateOrderStatus } from '@/api/orders';
 import { useToast } from '@/hooks/use-toast';
-import { Package, Truck, CheckCircle } from 'lucide-react';
+import { Package, Truck, CheckCircle, Edit, Trash2, Plus } from 'lucide-react';
 
 interface OrderUpdateDialogProps {
   isOpen: boolean;
@@ -32,6 +32,8 @@ export const OrderUpdateDialog: React.FC<OrderUpdateDialogProps> = ({
   const [paymentMethod, setPaymentMethod] = useState('');
   const [isDelivered, setIsDelivered] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
+  const [orderItems, setOrderItems] = useState([]);
+  const [editingItems, setEditingItems] = useState(false);
 
   useEffect(() => {
     if (order) {
@@ -39,6 +41,7 @@ export const OrderUpdateDialog: React.FC<OrderUpdateDialogProps> = ({
       setPaymentMethod(order.paymentMethod || '');
       setIsDelivered(order.isDelivered || false);
       setIsPaid(order.isPaid || false);
+      setOrderItems(order.items || []);
     }
   }, [order]);
 
@@ -85,9 +88,26 @@ export const OrderUpdateDialog: React.FC<OrderUpdateDialogProps> = ({
     const updateData = {
       shippingAddress,
       paymentMethod,
+      items: editingItems ? orderItems.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price
+      })) : undefined
     };
 
     updateOrderMutation.mutate({ id: order.id, data: updateData });
+  };
+
+  const updateItemQuantity = (index: number, newQuantity: number) => {
+    if (newQuantity < 1) return;
+    const updatedItems = [...orderItems];
+    updatedItems[index] = { ...updatedItems[index], quantity: newQuantity };
+    setOrderItems(updatedItems);
+  };
+
+  const removeItem = (index: number) => {
+    const updatedItems = orderItems.filter((_, i) => i !== index);
+    setOrderItems(updatedItems);
   };
 
   const handleUpdateStatus = () => {
@@ -137,9 +157,20 @@ export const OrderUpdateDialog: React.FC<OrderUpdateDialogProps> = ({
             
             {/* Order Items */}
             <div className="mt-4">
-              <h4 className="font-semibold mb-2">Items:</h4>
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="font-semibold">Items:</h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingItems(!editingItems)}
+                  className="flex items-center gap-1"
+                >
+                  <Edit className="w-3 h-3" />
+                  {editingItems ? 'Cancel Edit' : 'Edit Items'}
+                </Button>
+              </div>
               <div className="space-y-2">
-                {order.items?.map((item: any, index: number) => (
+                {orderItems?.map((item: any, index: number) => (
                   <div key={index} className="flex justify-between items-center p-2 bg-white rounded border">
                     <div className="flex items-center gap-2">
                       <img 
@@ -147,12 +178,49 @@ export const OrderUpdateDialog: React.FC<OrderUpdateDialogProps> = ({
                         alt={item.product?.name} 
                         className="w-8 h-8 object-cover rounded"
                       />
-                      <span>{item.product?.name}</span>
+                      <span className="flex-1">{item.product?.name}</span>
                     </div>
-                    <div className="text-right">
-                      <div>Qty: {item.quantity}</div>
-                      <div className="font-medium">{(item.price * item.quantity).toLocaleString()} Rwf</div>
-                    </div>
+                    
+                    {editingItems ? (
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateItemQuantity(index, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                          >
+                            -
+                          </Button>
+                          <Input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateItemQuantity(index, parseInt(e.target.value) || 1)}
+                            className="w-16 text-center"
+                            min="1"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateItemQuantity(index, item.quantity + 1)}
+                          >
+                            +
+                          </Button>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => removeItem(index)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-right">
+                        <div>Qty: {item.quantity}</div>
+                        <div className="font-medium">{(item.price * item.quantity).toLocaleString()} Rwf</div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

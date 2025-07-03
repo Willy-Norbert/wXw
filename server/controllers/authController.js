@@ -75,7 +75,21 @@ export const authUser = asyncHandler(async (req, res) => {
   });
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    console.log('🔍 SEARCHING FOR USER IN DATABASE:', { email });
+    const user = await prisma.user.findUnique({ 
+      where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        password: true,
+        role: true,
+        isActive: true,
+        sellerStatus: true,
+        sellerPermissions: true,
+        createdAt: true
+      }
+    });
     
     console.log('👤 USER FOUND:', user ? {
       id: user.id,
@@ -83,7 +97,8 @@ export const authUser = asyncHandler(async (req, res) => {
       role: user.role,
       isActive: user.isActive,
       sellerStatus: user.sellerStatus,
-      hasPassword: !!user.password
+      hasPassword: !!user.password,
+      createdAt: user.createdAt
     } : 'NO USER FOUND');
 
     if (!user) {

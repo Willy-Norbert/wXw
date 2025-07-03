@@ -43,7 +43,7 @@ export const submitSellerRequest = asyncHandler(async (req, res) => {
         sellerStatus: 'PENDING',
         businessName,
         bio: businessDescription || null,
-        isActive: false
+        isActive: true  // FIXED: Allow sellers to login immediately after registration
       }
     });
   }
