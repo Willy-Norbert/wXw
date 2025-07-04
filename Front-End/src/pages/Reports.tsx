@@ -26,7 +26,7 @@ const Reports = () => {
 
   const { data: ordersData, isLoading: ordersLoading } = useQuery({
     queryKey: ['orders'],
-    queryFn: getAllOrders
+    queryFn: () => getAllOrders()
   });
 
   const { data: usersData, isLoading: usersLoading } = useQuery({

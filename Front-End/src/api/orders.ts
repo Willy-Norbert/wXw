@@ -20,19 +20,25 @@ export interface Cart {
 }
 
 export interface Order {
+  id: number;
   status: string;
-  customerNotes: string;
-  orderNumber: ReactNode;
+  customerNotes?: string;
+  orderNumber: string;
   createdAt: string | number | Date;
   isPaid: any;
   isDelivered: any;
   isConfirmedByAdmin: any;
-  confirmedAt: string;
-  user: any;
+  confirmedAt?: string;
+  user?: any;
   customerName: any;
   customerEmail: any;
-  shippingAddress(shippingAddress: any): import("react").ReactNode;
-  paymentMethod: ReactNode;
+  shippingAddress: string;
+  paymentMethod: string;
+  paymentCode?: string;
+  paidAt?: string;
+  deliveredAt?: string;
+  shippingPrice?: number;
+  discountAmount?: number;
   items: any;
   totalPrice: any;
 }
@@ -55,6 +61,7 @@ export interface CreateOrderData {
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
+  userId?: number;
   billingAddress?: string;
   shippingAddress: string;
   paymentMethod: string;

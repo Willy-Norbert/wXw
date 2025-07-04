@@ -9,6 +9,7 @@ interface AuthContextType {
   login: (userData: UserResponse) => void;
   logout: () => void;
   loading: boolean;
+  updateUser?: (data: Partial<UserResponse>) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,6 +17,14 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 interface AuthProviderProps {
   children: ReactNode;
 }
+
+export const useAuth = () => {
+  const context = React.useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<UserResponse | null>(null);
@@ -92,15 +101,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('✅ AuthContext: Token verification response:', response.data);
         
         if (response.data.success && response.data.user) {
-          const verifiedUser = {
+          const verifiedUser: UserResponse = {
             id: response.data.user.id,
             name: response.data.user.name,
             email: response.data.user.email,
             role: response.data.user.role,
             token: token,
+            user: response.data.user,
             isActive: response.data.user.isActive,
             sellerStatus: response.data.user.sellerStatus,
-            sellerPermissions: response.data.user.sellerPermissions // Add this line
+            sellerPermissions: response.data.user.sellerPermissions
           };
           
           console.log('🔄 AuthContext: Setting verified user data:', {
@@ -199,8 +209,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading
   });
 
+  const updateUser = (data: Partial<UserResponse>) => {
+    if (user) {
+      const updatedUser = { ...user, ...data };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

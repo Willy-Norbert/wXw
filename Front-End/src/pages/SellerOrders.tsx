@@ -35,11 +35,13 @@ const SellerOrders = () => {
   const [showCreateOrderModal, setShowCreateOrderModal] = useState(false);
   const permissions = useSellerPermissions();
 
-  const { data: orders = [], isLoading } = useQuery({
+  const { data: ordersResponse, isLoading } = useQuery({
     queryKey: ['seller-orders'],
     queryFn: getSellerOrders,
     enabled: !!user
   });
+
+  const orders = ordersResponse?.data || [];
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ orderId, updates }: { orderId: number; updates: any }) =>

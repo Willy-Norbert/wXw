@@ -47,11 +47,13 @@ const OrderCreation = () => {
   }, [permissions.canCreateCustomers, navigate, toast]);
 
   // Get products (filtered for sellers to only show their products)
-  const { data: products = [], isLoading: productsLoading } = useQuery({
+  const { data: productsResponse, isLoading: productsLoading } = useQuery({
     queryKey: ['products'],
     queryFn: getProducts,
     enabled: !!user
   });
+
+  const products = Array.isArray(productsResponse) ? productsResponse : productsResponse?.data || [];
 
   const createOrderMutation = useMutation({
     mutationFn: createOrder,

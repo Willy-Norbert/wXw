@@ -180,7 +180,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ChartComponent
             type="bar"
-            data={monthlyOrdersData}
+            data={monthlyOrdersData.map(item => ({ ...item, value: item.orders }))}
             title="Monthly Orders"
             dataKey="orders"
             height={300}
@@ -197,7 +197,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ChartComponent
             type="line"
-            data={monthlyOrdersData}
+            data={monthlyOrdersData.map(item => ({ ...item, value: item.revenue }))}
             title="Monthly Revenue Trend"
             dataKey="revenue"
             height={300}

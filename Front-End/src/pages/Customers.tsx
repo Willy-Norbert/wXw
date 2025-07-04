@@ -27,7 +27,7 @@ const Customers = () => {
   }, [user, navigate]);
 
   // If user is a seller, show seller-specific customers
-  if (user?.role === 'SELLER') {
+  if (user?.role.toLowerCase() === 'seller') {
     return <SellerCustomers />;
   }
 
@@ -38,7 +38,7 @@ const Customers = () => {
       const response = await api.get('/auth/users');
       return response.data;
     },
-    enabled: !!user && user.role === 'ADMIN',
+    enabled: !!user && user.role.toLowerCase() === 'admin',
   });
 
   if (!user || user.role === 'buyer') {
@@ -46,7 +46,7 @@ const Customers = () => {
   }
 
   // If user is not admin, redirect to dashboard
-  if (user.role !== 'ADMIN') {
+  if (user.role.toLowerCase() !== 'admin') {
     navigate('/dashboard');
     return null;
   }

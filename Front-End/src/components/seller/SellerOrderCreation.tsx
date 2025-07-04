@@ -198,8 +198,11 @@ export const SellerOrderCreation: React.FC<SellerOrderCreationProps> = ({
       return;
     }
 
+    const selectedCustomer = customers?.find((c: any) => c.id === selectedCustomerId);
+    
     createOrderMutation.mutate({
-      userId: selectedCustomerId,
+      customerName: selectedCustomer?.name || '',
+      customerEmail: selectedCustomer?.email || '',
       shippingAddress: orderData.shippingAddress,
       paymentMethod: orderData.paymentMethod,
       items: validItems.map(item => ({

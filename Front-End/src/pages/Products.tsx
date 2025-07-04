@@ -71,9 +71,9 @@ const Products = () => {
   }).sort((a, b) => {
     switch (sortBy) {
       case 'price-low':
-        return parseFloat(a.price) - parseFloat(b.price);
+        return a.price - b.price;
       case 'price-high':
-        return parseFloat(b.price) - parseFloat(a.price);
+        return b.price - a.price;
       case 'rating':
         return (b.averageRating || 0) - (a.averageRating || 0);
       case 'name':
@@ -311,7 +311,7 @@ const Products = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-2xl font-bold text-purple-600">
-                          {parseFloat(product.price).toLocaleString()} Rwf
+                          {product.price.toLocaleString()} Rwf
                         </p>
                         {product.stock > 0 ? (
                           <p className="text-sm text-green-600">In Stock ({product.stock})</p>

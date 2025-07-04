@@ -51,7 +51,7 @@ export const GuestCheckoutModal: React.FC<GuestCheckoutModalProps> = ({
 
     setLoading(true);
     try {
-      await register({
+      await registerUser({
         name: registrationData.name,
         email: registrationData.email,
         password: registrationData.password

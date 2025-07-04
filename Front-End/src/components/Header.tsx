@@ -28,7 +28,7 @@ const Header = () => {
   };
 
   const handleChatClick = (e: React.MouseEvent) => {
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'SELLER')) {
+    if (!user || (user.role.toLowerCase() !== 'admin' && user.role.toLowerCase() !== 'seller')) {
       e.preventDefault();
       window.location.href = ROUTES.LOGIN;
       return;
@@ -140,7 +140,7 @@ const Header = () => {
                   <CartBadge />
 
                   {/* Chat Icon - Visible only to Admin or Seller */}
-                  {user && (user.role === 'ADMIN' || user.role === 'SELLER') && (
+                  {user && (user.role.toLowerCase() === 'admin' || user.role.toLowerCase() === 'seller') && (
                     <Link to="/community-chat" onClick={handleChatClick}>
                       <Button variant="ghost" size="icon" className="text-gray-700 hover:text-purple-600">
                         <MessageSquare className="w-5 h-5" />
@@ -169,7 +169,7 @@ const Header = () => {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem>
-                           {user && (user.role === 'ADMIN' || user.role === 'SELLER') && (
+                           {user && (user.role.toLowerCase() === 'admin' || user.role.toLowerCase() === 'seller') && (
                           <Link to="/dashboard" className="text-gray-700 hover:text-purple-600 transition-colors">
                             {t('nav.dashboard')}
                           </Link> )}

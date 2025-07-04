@@ -111,7 +111,7 @@ const Login = () => {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                 <div className="flex items-start space-x-2">
                   <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5" />
-                  <p className="text-sm text-blue-700">{onmessage}</p>
+                  <p className="text-sm text-blue-700">{typeof onmessage === 'string' ? onmessage : 'Message received'}</p>
                 </div>
               </div>
             )}

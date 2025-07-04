@@ -26,7 +26,7 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
   // Fetch reviews from backend
   const { data: reviewsData, isLoading, error } = useQuery({
     queryKey: ['reviews', productId],
-    queryFn: () => getProductReviews(productId),
+    queryFn: () => getProductReviews(productId.toString()),
   });
 
   const reviews = reviewsData?.data || [];
@@ -35,7 +35,7 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
   const submitReviewMutation = useMutation({
     mutationFn: (reviewData: { rating: number; comment: string }) => {
       console.log('Submitting review:', reviewData, 'for product:', productId);
-      return createProductReview(productId, reviewData);
+      return createProductReview(productId.toString(), reviewData);
     },
     onSuccess: () => {
       toast({

@@ -68,14 +68,14 @@ const SellerManagement = () => {
   useEffect(() => {
     if (loading) return;
     if (!user) return navigate('/login');
-    if (user.role !== 'ADMIN') navigate('/dashboard');
+    if (user.role.toLowerCase() !== 'admin') navigate('/dashboard');
   }, [user, loading, navigate]);
 
   // Updated to fetch all sellers
   const { data: sellersData, isLoading, error } = useQuery({
     queryKey: ['all-sellers'],
     queryFn: () => api.get('/sellers/all'),
-    enabled: !!user && user.role === 'ADMIN',
+    enabled: !!user && user.role.toLowerCase() === 'admin',
   });
 
   // Create Seller mutation
@@ -85,7 +85,7 @@ const SellerManagement = () => {
       return api.post('/auth/register', data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['all-sellers']);
+      queryClient.invalidateQueries({ queryKey: ['all-sellers'] });
       setIsCreateModalOpen(false);
       form.reset();
       toast({ title: 'Success', description: 'Seller created successfully.' });
@@ -100,7 +100,7 @@ const SellerManagement = () => {
     mutationFn: ({ sellerId, status, isActive }: any) =>
       api.put(`/sellers/${sellerId}/status`, { status, isActive }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['all-sellers']);
+      queryClient.invalidateQueries({ queryKey: ['all-sellers'] });
       toast({ title: 'Success', description: 'Seller status updated.' });
     },
     onError: (err: any) => {
@@ -149,7 +149,7 @@ const SellerManagement = () => {
       </DashboardLayout>
     );
 
-  if (!user || user.role !== 'ADMIN') return null;
+  if (!user || user.role.toLowerCase() !== 'admin') return null;
 
   if (error)
     return (

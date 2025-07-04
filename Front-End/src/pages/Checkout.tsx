@@ -22,7 +22,7 @@ const Checkout = () => {
   const auth = useContext(AuthContext);
   const { toast } = useToast();
   const { cart, isLoading } = useCart();
-  const [paymentMethod, setPaymentMethod] = useState(APP_CONSTANTS.PAYMENT_METHODS.MTN);
+  const [paymentMethod, setPaymentMethod] = useState<string>(APP_CONSTANTS.PAYMENT_METHODS.MTN);
   const [sameAsBilling, setSameAsBilling] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [paymentCode, setPaymentCode] = useState('');

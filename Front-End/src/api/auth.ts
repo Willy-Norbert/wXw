@@ -13,15 +13,16 @@ export interface LoginData {
 }
 
 export interface UserResponse {
-  user: any;
-  sellerPermissions: any;
-  isActive: any;
-  sellerStatus: string;
   id: number;
   name: string;
   email: string;
   role: 'admin' | 'seller' | 'buyer';
   token: string;
+  user?: any;
+  sellerPermissions?: any;
+  isActive?: any;
+  sellerStatus?: string;
+  updateUser?: (data: Partial<UserResponse>) => void;
 }
 
 export const registerUser = (data: RegisterData) =>

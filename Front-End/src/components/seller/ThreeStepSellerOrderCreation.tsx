@@ -28,6 +28,15 @@ interface Customer {
   phone?: string;
 }
 
+interface NewCustomerData {
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  shippingAddress: string;
+}
+
+type CustomerInfo = Customer | NewCustomerData;
+
 interface Product {
   id: number;
   name: string;
@@ -502,7 +511,7 @@ export const ThreeStepSellerOrderCreation: React.FC<ThreeStepSellerOrderCreation
   );
 
   const renderStep3 = () => {
-    const customerInfo = isCreatingNewCustomer ? newCustomerData : selectedCustomer;
+    const customerInfo: CustomerInfo | null = isCreatingNewCustomer ? newCustomerData : selectedCustomer;
     const shippingAddress = isCreatingNewCustomer ? newCustomerData.shippingAddress : orderData.shippingAddress;
 
     return (
@@ -532,16 +541,16 @@ export const ThreeStepSellerOrderCreation: React.FC<ThreeStepSellerOrderCreation
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-gray-600">Name</p>
-              <p className="font-medium">{customerInfo?.customerName || customerInfo?.name}</p>
+              <p className="font-medium">{'customerName' in (customerInfo || {}) ? customerInfo.customerName : customerInfo?.name}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Email</p>
-              <p className="font-medium">{customerInfo?.customerEmail || customerInfo?.email}</p>
+              <p className="font-medium">{'customerEmail' in (customerInfo || {}) ? customerInfo.customerEmail : customerInfo?.email}</p>
             </div>
-            {(customerInfo?.customerPhone || customerInfo?.phone) && (
+            {(('customerPhone' in (customerInfo || {}) ? customerInfo.customerPhone : customerInfo?.phone)) && (
               <div>
                 <p className="text-sm text-gray-600">Phone</p>
-                <p className="font-medium">{customerInfo?.customerPhone || customerInfo?.phone}</p>
+                <p className="font-medium">{'customerPhone' in (customerInfo || {}) ? customerInfo.customerPhone : customerInfo?.phone}</p>
               </div>
             )}
             <div>

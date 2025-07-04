@@ -178,7 +178,7 @@ const EnhancedOrderEditModal: React.FC<EnhancedOrderEditModalProps> = ({
       newItems[index] = { ...newItems[index], [field]: value };
       
       if (field === 'productId') {
-        const product = sellerProducts.data.find((p: any) => p.id === value);
+        const product = (Array.isArray(sellerProducts) ? sellerProducts : sellerProducts?.data || []).find((p: any) => p.id === value);
 
         if (product) {
           newItems[index].productName = product.name;
@@ -414,7 +414,7 @@ const EnhancedOrderEditModal: React.FC<EnhancedOrderEditModalProps> = ({
                             <SelectValue placeholder="Select your product" />
                           </SelectTrigger>
                           <SelectContent>
-                            {sellerProducts.data.map((product: any) => (
+                            {(Array.isArray(sellerProducts) ? sellerProducts : sellerProducts?.data || []).map((product: any) => (
                               <SelectItem key={product.id} value={product.id.toString()}>
                                 {product.name} - {product.price?.toLocaleString()} Rwf
                               </SelectItem>
