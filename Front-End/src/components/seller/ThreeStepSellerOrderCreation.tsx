@@ -70,6 +70,9 @@ export const ThreeStepSellerOrderCreation: React.FC<ThreeStepSellerOrderCreation
     items: [] as OrderItem[],
     totalPrice: 0
   });
+    const isNewCustomer = (info: CustomerInfo): info is NewCustomerData => {
+      return 'customerName' in info;
+    };
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -251,6 +254,7 @@ export const ThreeStepSellerOrderCreation: React.FC<ThreeStepSellerOrderCreation
         price: item.price
       })),
       totalPrice: orderData.totalPrice,
+      shippingPrice: 1200,
       // Add seller info for the confirmation message
       sellerName: user?.name || 'Your Seller',
       sellerEmail: user?.email || ''
@@ -510,114 +514,130 @@ export const ThreeStepSellerOrderCreation: React.FC<ThreeStepSellerOrderCreation
     </div>
   );
 
-  const renderStep3 = () => {
-    const customerInfo: CustomerInfo | null = isCreatingNewCustomer ? newCustomerData : selectedCustomer;
-    const shippingAddress = isCreatingNewCustomer ? newCustomerData.shippingAddress : orderData.shippingAddress;
+const renderStep3 = () => {
+  const customerInfo: CustomerInfo | null = isCreatingNewCustomer ? newCustomerData : selectedCustomer;
+  const shippingAddress = isCreatingNewCustomer ? newCustomerData.shippingAddress : orderData.shippingAddress;
 
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center space-x-2 mb-4">
-          <CheckCircle className="w-5 h-5 text-purple-600" />
-          <h3 className="text-lg font-semibold">Step 3: Review & Submit Order</h3>
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center space-x-2 mb-4">
+        <CheckCircle className="w-5 h-5 text-purple-600" />
+        <h3 className="text-lg font-semibold">Step 3: Review & Submit Order</h3>
+      </div>
+
+      {/* Seller Confirmation Message */}
+      <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
+        <div className="flex items-center space-x-2 mb-2">
+          <Mail className="w-5 h-5 text-purple-600" />
+          <span className="font-medium text-purple-800">Order Confirmation</span>
         </div>
+        <p className="text-purple-700">
+          This order was created for you by <strong>{user?.name || 'Your Seller'}</strong>
+        </p>
+        <p className="text-sm text-purple-600 mt-1">
+          The customer will receive an email confirmation with this message.
+        </p>
+      </div>
 
-        {/* Seller Confirmation Message */}
-        <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
-          <div className="flex items-center space-x-2 mb-2">
-            <Mail className="w-5 h-5 text-purple-600" />
-            <span className="font-medium text-purple-800">Order Confirmation</span>
+      {/* Customer Information */}
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <h4 className="font-medium mb-3">Customer Information</h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-gray-600">Name</p>
+           <p className="font-medium">
+            {isNewCustomer(customerInfo)
+              ? customerInfo.customerEmail
+              : (customerInfo as Customer)?.email}
+          </p>
+
           </div>
-          <p className="text-purple-700">
-            This order was created for you by <strong>{user?.name || 'Your Seller'}</strong>
+          <div>
+            <p className="text-sm text-gray-600">Email</p>
+           <p className="font-medium">
+            {isNewCustomer(customerInfo)
+              ? customerInfo.customerName
+              : (customerInfo as Customer)?.name}
           </p>
-          <p className="text-sm text-purple-600 mt-1">
-            The customer will receive an email confirmation with this message.
-          </p>
-        </div>
 
-        {/* Customer Information */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-medium mb-3">Customer Information</h4>
-          <div className="grid grid-cols-2 gap-4">
+          </div>
+          {(customerInfo && (isNewCustomer(customerInfo) ? customerInfo.customerPhone : customerInfo?.phone)) && (
             <div>
-              <p className="text-sm text-gray-600">Name</p>
-              <p className="font-medium">{'customerName' in (customerInfo || {}) ? customerInfo.customerName : customerInfo?.name}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Email</p>
-              <p className="font-medium">{'customerEmail' in (customerInfo || {}) ? customerInfo.customerEmail : customerInfo?.email}</p>
-            </div>
-            {(('customerPhone' in (customerInfo || {}) ? customerInfo.customerPhone : customerInfo?.phone)) && (
-              <div>
-                <p className="text-sm text-gray-600">Phone</p>
-                <p className="font-medium">{'customerPhone' in (customerInfo || {}) ? customerInfo.customerPhone : customerInfo?.phone}</p>
-              </div>
-            )}
-            <div>
-              <p className="text-sm text-gray-600">Payment Method</p>
+              <p className="text-sm text-gray-600">Phone</p>
               <p className="font-medium">
-                {orderData.paymentMethod === 'PAY_ON_DELIVERY' ? 'Pay on Delivery' : 
-                 orderData.paymentMethod === 'MTN' ? 'MTN Mobile Money' :
-                 'Bank Transfer'}
+                {isNewCustomer(customerInfo) ? customerInfo.customerPhone : customerInfo?.phone}
               </p>
             </div>
-          </div>
-          <div className="mt-4">
-            <p className="text-sm text-gray-600">Shipping Address</p>
-            <p className="font-medium">{shippingAddress}</p>
-          </div>
-        </div>
-
-        {/* Order Items */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-medium mb-3">Order Items</h4>
-          <div className="space-y-3">
-            {orderData.items.filter(item => item.productId > 0).map((item, index) => (
-              <div key={index} className="flex items-center space-x-3 bg-white p-3 rounded">
-                {item.productImage && (
-                  <img
-                    src={item.productImage}
-                    alt={item.productName}
-                    className="w-12 h-12 object-cover rounded"
-                  />
-                )}
-                <div className="flex-1">
-                  <p className="font-medium">{item.productName}</p>
-                  <p className="text-sm text-gray-600">
-                    Quantity: {item.quantity} × {item.price?.toLocaleString()} Rwf
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">{(item.price * item.quantity).toLocaleString()} Rwf</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="border-t pt-3 mt-3">
-            <div className="flex justify-between items-center">
-              <span className="text-lg font-bold">Total Amount:</span>
-              <span className="text-xl font-bold text-purple-600">
-                {orderData.items.filter(item => item.productId > 0 && item.quantity > 0)
-                  .reduce((sum, item) => sum + (item.price * item.quantity), 0)
-                  .toLocaleString()} Rwf
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {orderData.paymentMethod === 'MTN' && (
-          <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-            <p className="text-sm text-blue-600 font-medium">
-              <strong>MTN Mobile Money Payment Code:</strong> 0784720884
-            </p>
-            <p className="text-xs text-blue-500 mt-1">
-              Customer will receive this information in their confirmation email.
+          )}
+          <div>
+            <p className="text-sm text-gray-600">Payment Method</p>
+            <p className="font-medium">
+              {orderData.paymentMethod === 'PAY_ON_DELIVERY'
+                ? 'Pay on Delivery'
+                : orderData.paymentMethod === 'MTN'
+                ? 'MTN Mobile Money'
+                : 'Bank Transfer'}
             </p>
           </div>
-        )}
+        </div>
+        <div className="mt-4">
+          <p className="text-sm text-gray-600">Shipping Address</p>
+          <p className="font-medium">{shippingAddress}</p>
+        </div>
       </div>
-    );
-  };
+
+      {/* Order Items */}
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <h4 className="font-medium mb-3">Order Items</h4>
+        <div className="space-y-3">
+          {orderData.items.filter(item => item.productId > 0).map((item, index) => (
+            <div key={index} className="flex items-center space-x-3 bg-white p-3 rounded">
+              {item.productImage && (
+                <img
+                  src={item.productImage}
+                  alt={item.productName}
+                  className="w-12 h-12 object-cover rounded"
+                />
+              )}
+              <div className="flex-1">
+                <p className="font-medium">{item.productName}</p>
+                <p className="text-sm text-gray-600">
+                  Quantity: {item.quantity} × {item.price?.toLocaleString()} Rwf
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="font-medium">{(item.price * item.quantity).toLocaleString()} Rwf</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="border-t pt-3 mt-3">
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-bold">Total Amount:</span>
+            <span className="text-xl font-bold text-purple-600">
+              {orderData.items
+                .filter(item => item.productId > 0 && item.quantity > 0)
+                .reduce((sum, item) => sum + item.price * item.quantity, 0)
+                .toLocaleString()} Rwf
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {orderData.paymentMethod === 'MTN' && (
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+          <p className="text-sm text-blue-600 font-medium">
+            <strong>MTN Mobile Money Payment Code:</strong> 0784720884
+          </p>
+          <p className="text-xs text-blue-500 mt-1">
+            Customer will receive this information in their confirmation email.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

@@ -200,18 +200,20 @@ export const SellerOrderCreation: React.FC<SellerOrderCreationProps> = ({
 
     const selectedCustomer = customers?.find((c: any) => c.id === selectedCustomerId);
     
-    createOrderMutation.mutate({
-      customerName: selectedCustomer?.name || '',
-      customerEmail: selectedCustomer?.email || '',
-      shippingAddress: orderData.shippingAddress,
-      paymentMethod: orderData.paymentMethod,
-      items: validItems.map(item => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.price
-      })),
-      totalPrice: calculateTotal()
-    });
+  createOrderMutation.mutate({
+  customerName: selectedCustomer?.name || '',
+  customerEmail: selectedCustomer?.email || '',
+  shippingAddress: orderData.shippingAddress,
+  paymentMethod: orderData.paymentMethod,
+  items: validItems.map(item => ({
+    productId: item.productId,
+    quantity: item.quantity,
+    price: item.price
+  })),
+  totalPrice: calculateTotal(),
+  shippingPrice: 1200 // ✅ ADD THIS LINE — or whatever default you're using
+});
+
   };
 
   return (

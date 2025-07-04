@@ -54,7 +54,8 @@ export const GuestCheckoutModal: React.FC<GuestCheckoutModalProps> = ({
       await registerUser({
         name: registrationData.name,
         email: registrationData.email,
-        password: registrationData.password
+        password: registrationData.password,
+        role: 'buyer'
       });
 
       toast({

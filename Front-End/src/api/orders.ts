@@ -64,6 +64,8 @@ export interface CreateOrderData {
   userId?: number;
   billingAddress?: string;
   shippingAddress: string;
+  shippingPrice: number;
+  discountAmount?: number;
   paymentMethod: string;
   items: Array<{
     productId: number;

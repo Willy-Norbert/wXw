@@ -133,7 +133,8 @@ const OrderCreation = () => {
       shippingAddress,
       paymentMethod: paymentMethod || 'PAY_ON_DELIVERY',
       items: selectedProducts,
-      totalPrice: calculateTotal()
+      totalPrice: calculateTotal(),
+      shippingPrice: 1200, // Example shipping price, can be dynamic
     };
 
     createOrderMutation.mutate(orderData);
