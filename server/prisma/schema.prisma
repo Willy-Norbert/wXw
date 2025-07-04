@@ -1,0 +1,297 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  BUYER
+  SELLER
+}
+
+enum SellerStatus {
+  INACTIVE
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  ERROR
+  SUCCESS
+}
+
+enum MessageType {
+  TEXT
+  FILE
+  IMAGE
+  AUDIO
+}
+
+enum FileType {
+  IMAGE
+  PDF
+  AUDIO
+  VIDEO
+  DOCUMENT
+}
+
+model User {
+  id             Int              @id @default(autoincrement())
+  name           String
+  email          String           @unique
+  password       String
+  role           Role             @default(BUYER)
+  phone          String?
+  address        String?
+  bio            String?
+  company        String?
+  businessName   String?
+  gender         String?
+  isActive       Boolean          @default(true)
+  sellerStatus   SellerStatus     @default(INACTIVE)
+  sellerPermissions Json?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  products       Product[]
+  reviews        Review[]
+  orders         Order[]
+  cart           Cart?
+  notifications  Notification[]
+  chatMessages   ChatMessage[]
+
+  @@map("users")
+}
+
+model Product {
+  id             Int        @id @default(autoincrement())
+  name           String     @db.VarChar(255)
+  description    String?    @db.Text
+  price          Decimal    @db.Decimal(10, 2)
+  stock          Int        @default(0)
+  category       Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  coverImage     String     @default("https://aannet.org/global_graphics/default-store-350x350.jpg") @db.VarChar(500)
+  categoryId     Int
+  createdBy      User?      @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdById    Int?
+  averageRating  Decimal    @default(0) @db.Decimal(3, 2)
+  numReviews     Int        @default(0)
+  isVisible      Boolean    @default(true)
+  colors         String[]   @default([])
+  sizes          String[]   @default([])
+  sku            String?    @unique @db.VarChar(100)
+  weight         Decimal?   @db.Decimal(8, 2)
+  dimensions     String?    @db.VarChar(100)
+  tags           String[]   @default([])
+  isOnSale       Boolean    @default(false)
+  salePrice      Decimal?   @db.Decimal(10, 2)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  reviews        Review[]
+  orderItems     OrderItem[]
+  cartItems      CartItem[]
+
+  @@index([categoryId])
+  @@index([createdById])
+  @@index([isVisible])
+  @@index([createdAt])
+  @@map("products")
+}
+
+model Category {
+  id          Int         @id @default(autoincrement())
+  name        String      @unique @db.VarChar(100)
+  description String?     @db.Text
+  image       String?     @db.VarChar(500)
+  isActive    Boolean     @default(true)
+  parentId    Int?
+  parent      Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[]  @relation("CategoryHierarchy")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  products    Product[]
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Review {
+  id           Int      @id @default(autoincrement())
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId    Int
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int?
+  rating       Int      @db.SmallInt
+  comment      String?  @db.Text
+  isVerified   Boolean  @default(false)
+  helpfulCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([userId])
+  @@map("reviews")
+}
+
+model Cart {
+  id        Int      @id @default(autoincrement())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int?     @unique
+  guestId   String?  @unique @db.VarChar(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items     CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId    Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId Int
+  quantity  Int      @default(1) @db.SmallInt
+  color     String?  @db.VarChar(50)
+  size      String?  @db.VarChar(20)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId, color, size])
+  @@index([cartId])
+  @@index([productId])
+  @@map("cart_items")
+}
+
+model Order {
+  id                  Int        @id @default(autoincrement())
+  user                User?      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  userId              Int?
+  orderNumber         String     @unique @db.VarChar(50)
+  customerName        String?
+  customerEmail       String?
+  billingAddress      Json?
+  shippingAddress     Json
+  discountAmount      Decimal? 
+  paymentCode         String?    @db.VarChar(100)
+  paymentMethod       String?    @db.VarChar(50)
+  paymentResult       Json?
+  totalPrice          Decimal    @db.Decimal(10, 2)
+  shippingPrice       Decimal    @default(0) @db.Decimal(10, 2)
+  taxPrice            Decimal    @default(0) @db.Decimal(10, 2)
+  status              OrderStatus @default(PENDING)
+  isPaid              Boolean    @default(false)
+  paidAt              DateTime?
+  isDelivered         Boolean    @default(false)
+  deliveredAt         DateTime?
+  isConfirmedByAdmin  Boolean    @default(false)
+  confirmedAt         DateTime?
+  trackingNumber      String?    @db.VarChar(100)
+  notes               String?    @db.Text
+  isCancelled         Boolean    @default(false)
+  cancelledAt         DateTime?
+  cancelledBy         Int?
+
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  items               OrderItem[]
+  notifications       Notification[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productId Int
+  quantity  Int      @db.SmallInt
+  price     Decimal  @db.Decimal(10, 2)
+  color     String?  @db.VarChar(50)
+  size      String?  @db.VarChar(20)
+  createdAt DateTime @default(now())
+
+  @@unique([orderId, productId, color, size])
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model Notification {
+  id             Int             @id @default(autoincrement())
+  user           User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         Int?
+  title          String          @db.VarChar(255)
+  message        String          @db.Text
+  type           NotificationType @default(INFO)
+  recipientRole  Role
+  relatedOrder   Order?          @relation(fields: [relatedOrderId], references: [id], onDelete: SetNull)
+  relatedOrderId Int?
+  isRead         Boolean         @default(false)
+  readAt         DateTime?
+  createdAt      DateTime        @default(now())
+
+  @@index([userId])
+  @@index([recipientRole])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model ChatMessage {
+  id          Int          @id @default(autoincrement())
+  message     String?      @db.Text
+  userId      Int
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messageType MessageType  @default(TEXT)
+  isEdited    Boolean      @default(false)
+  editedAt    DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  attachments ChatAttachment[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
+model ChatAttachment {
+  id          Int          @id @default(autoincrement())
+  chatMessage ChatMessage  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId   Int
+  fileName    String       @db.VarChar(255)
+  fileUrl     String       @db.VarChar(500)
+  fileType    FileType
+  fileSize    Int?
+  createdAt   DateTime     @default(now())
+
+  @@index([messageId])
+  @@map("chat_attachments")
+}
