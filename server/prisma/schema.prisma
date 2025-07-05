@@ -87,7 +87,7 @@ model Product {
   price          Decimal    @db.Decimal(10, 2)
   stock          Int        @default(0)
   category       Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  coverImage     String     @default("https://aannet.org/global_graphics/default-store-350x350.jpg") @db.VarChar(500)
+  coverImage     String?    
   categoryId     Int
   createdBy      User?      @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdById    Int?

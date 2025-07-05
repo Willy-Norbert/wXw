@@ -179,7 +179,7 @@ const ProductCard = ({
       <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 group hover:scale-105">
         <div className="relative overflow-hidden rounded-t-xl">
           <img 
-            src={getPublicImageUrl(image) || '/placeholder.svg'} 
+            src={getPublicImageUrl(image)} 
             alt={title}
             className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
             onError={(e) => {

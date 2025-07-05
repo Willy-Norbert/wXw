@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "products" ALTER COLUMN "coverImage" DROP NOT NULL,
+ALTER COLUMN "coverImage" DROP DEFAULT,
+ALTER COLUMN "coverImage" SET DATA TYPE TEXT;
