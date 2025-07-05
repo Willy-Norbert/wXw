@@ -259,7 +259,11 @@ export const sendOrderConfirmationEmail = async (orderData) => {
           ${deliveryFee ? `<p><strong>Delivery Fee:</strong> ${deliveryFee.toLocaleString()} Rwf</p>` : ''}
           <p><strong>Total Amount:</strong> ${totalPrice.toLocaleString()} Rwf</p>
           ${billingAddress ? `<p><strong>Billing Address:</strong> ${typeof billingAddress === 'string' ? billingAddress : JSON.stringify(billingAddress)}</p>` : ''}
-          <p><strong>Shipping Address:</strong> ${shippingAddress}</p>
+          <p><strong>Shipping Address:</strong> ${
+            typeof shippingAddress === 'string' 
+              ? shippingAddress 
+              : `${shippingAddress.street || ''}, ${shippingAddress.city || ''}, ${shippingAddress.state || ''} ${shippingAddress.postalCode || ''}, ${shippingAddress.country || ''}`.replace(/,\s*,/g, ',').replace(/^\s*,|,\s*$/g, '')
+          }</p>
           
           <h4>Items Ordered:</h4>
           <pre style="white-space: pre-line; font-family: Arial, sans-serif;">${itemsList}</pre>

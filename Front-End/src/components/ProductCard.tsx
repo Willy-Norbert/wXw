@@ -31,12 +31,12 @@ interface ProductCardProps {
 
 // Helper to get full public URL for an image stored in Supabase storage
 const getPublicImageUrl = (path: string): string => {
-  if (!path) return '';
+  if (!path) return '/placeholder.svg'; // Return placeholder immediately if no path
   if (path.startsWith('http')) return path; // Already a full URL
   // Build the URL based on your Supabase storage public URL and bucket name
-  // Adjust bucket name if different
   const bucketName = 'ecommerce';
-  return supabase.storage.from(bucketName).getPublicUrl(path).data.publicUrl || '';
+  const publicUrl = supabase.storage.from(bucketName).getPublicUrl(path).data.publicUrl;
+  return publicUrl || '/placeholder.svg';
 };
 
 const ProductCard = ({ 

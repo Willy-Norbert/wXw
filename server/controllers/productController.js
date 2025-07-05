@@ -14,7 +14,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     throw new Error('Name, price, stock, and category are required');
   }
   
-  const productCoverImage = coverImage || 'https://aannet.org/global_graphics/default-store-350x350.jpg';
+  const productCoverImage = coverImage || null; // Store null instead of default URL to let frontend handle placeholder
   
   // Determine who will be the product owner
   let productOwnerId = req.user.id;
