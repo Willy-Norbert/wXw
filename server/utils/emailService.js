@@ -608,7 +608,7 @@ export const sendSellerOrderNotificationEmail = async (orderData) => {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.FRONTEND_URL || 'https://wxw.vercel.app'}/seller/orders" 
+            <a href="${process.env.FRONTEND_URL || 'https://wxw.vercel.app'}/login" 
                style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
               View Order Details
             </a>
