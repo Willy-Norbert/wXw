@@ -195,12 +195,12 @@ const AdminProducts = () => {
                   />
 
                   {/* FileUpload for Supabase integration */}
-                  <div className="border-t pt-4">
+                  {/* <div className="border-t pt-4">
                     <label className="block text-sm font-medium mb-2">
-                      Upload Product Image (Supabase)
+                      Upload Product Image *
                     </label>
                     <FileUpload onFileSelect={handleFileSelect} />
-                  </div>
+                  </div> */}
                 </div>
               </CardContent>
             </Card>

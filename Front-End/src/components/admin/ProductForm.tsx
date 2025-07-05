@@ -1,14 +1,20 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { X, Upload, Link } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getAllUsers } from '@/api/users';
+import FileUpload, { FileData } from '@/components/chat/FileUpload';
 
 interface ProductFormProps {
   editingProduct?: any;
@@ -27,7 +33,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   previewImage,
   isLoading,
   onSubmit,
-  onCancel
+  onCancel,
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -38,21 +44,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     coverImage: '',
     colors: [] as string[],
     sizes: [] as string[],
-    assignedSellerId: '' // New field for seller assignment
+    assignedSellerId: '',
   });
 
   const [newColor, setNewColor] = useState('');
   const [newSize, setNewSize] = useState('');
   const [imageUrl, setImageUrl] = useState('');
 
-  // Fetch sellers for assignment dropdown
   const { data: usersData } = useQuery({
     queryKey: ['users'],
     queryFn: getAllUsers,
     select: (response) => {
       const users = response.data || [];
-      return users.filter(user => user.role.toLowerCase() === 'seller');
-    }
+      return users.filter((user) => user.role.toLowerCase() === 'seller');
+    },
   });
 
   const sellers = usersData || [];
@@ -68,7 +73,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         coverImage: editingProduct.coverImage || '',
         colors: editingProduct.colors || [],
         sizes: editingProduct.sizes || [],
-        assignedSellerId: editingProduct.createdById?.toString() || ''
+        assignedSellerId: editingProduct.createdById?.toString() || '',
       });
       setImageUrl(editingProduct.coverImage || '');
     }
@@ -76,58 +81,59 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const submitData = {
       ...formData,
       price: parseFloat(formData.price),
       stock: parseInt(formData.stock),
       categoryId: parseInt(formData.categoryId),
       coverImage: previewImage || imageUrl || formData.coverImage,
-      assignedSellerId: formData.assignedSellerId ? parseInt(formData.assignedSellerId) : undefined
+      assignedSellerId: formData.assignedSellerId
+        ? parseInt(formData.assignedSellerId)
+        : undefined,
     };
 
-    console.log('🚀 Submitting product form with data:', submitData);
     onSubmit(submitData);
   };
 
   const addColor = () => {
     if (newColor.trim() && !formData.colors.includes(newColor.trim())) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        colors: [...prev.colors, newColor.trim()]
+        colors: [...prev.colors, newColor.trim()],
       }));
       setNewColor('');
     }
   };
 
   const removeColor = (color: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      colors: prev.colors.filter(c => c !== color)
+      colors: prev.colors.filter((c) => c !== color),
     }));
   };
 
   const addSize = () => {
     if (newSize.trim() && !formData.sizes.includes(newSize.trim())) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        sizes: [...prev.sizes, newSize.trim()]
+        sizes: [...prev.sizes, newSize.trim()],
       }));
       setNewSize('');
     }
   };
 
   const removeSize = (size: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      sizes: prev.sizes.filter(s => s !== size)
+      sizes: prev.sizes.filter((s) => s !== size),
     }));
   };
 
   const handleImageUrlChange = (url: string) => {
     setImageUrl(url);
     onUrlChange(url);
-    setFormData(prev => ({ ...prev, coverImage: url }));
+    setFormData((prev) => ({ ...prev, coverImage: url }));
   };
 
   return (
@@ -138,14 +144,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           <Input
             id="name"
             value={formData.name}
-            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, name: e.target.value }))
+            }
             required
           />
         </div>
 
         <div>
           <Label htmlFor="category">Category *</Label>
-          <Select value={formData.categoryId} onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}>
+          <Select
+            value={formData.categoryId}
+            onValueChange={(value) =>
+              setFormData((prev) => ({ ...prev, categoryId: value }))
+            }
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
@@ -166,7 +179,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             type="number"
             step="0.01"
             value={formData.price}
-            onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, price: e.target.value }))
+            }
             required
           />
         </div>
@@ -177,15 +192,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             id="stock"
             type="number"
             value={formData.stock}
-            onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, stock: e.target.value }))
+            }
             required
           />
         </div>
 
-        {/* Seller Assignment - Only show for admins */}
         <div className="md:col-span-2">
           <Label htmlFor="assignedSeller">Assign to Seller (Optional)</Label>
-          <Select value={formData.assignedSellerId} onValueChange={(value) => setFormData(prev => ({ ...prev, assignedSellerId: value }))}>
+          <Select
+            value={formData.assignedSellerId}
+            onValueChange={(value) =>
+              setFormData((prev) => ({ ...prev, assignedSellerId: value }))
+            }
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select seller (leave empty to assign to yourself)" />
             </SelectTrigger>
@@ -206,28 +227,50 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         <Textarea
           id="description"
           value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, description: e.target.value }))
+          }
           rows={3}
         />
       </div>
 
-      {/* Image URL Section - Simple URL input only */}
       <div>
-        <Label htmlFor="imageUrl">Product Image URL</Label>
+        <Label htmlFor="imageUrl">Product cover  image</Label>
+       <div className="border-t pt-4">
+          <Label className="block text-sm font-medium mb-2 p-2">
+            Upload Product Image *
+          </Label>
+          <FileUpload 
+            onlyImages
+            onFileSelect={(files: FileData[]) => {
+              const imageFile = files.find((f) => f.type === 'image');
+              if (imageFile) {
+                handleImageUrlChange(imageFile.url);
+              }
+            }}
+          />
+          <Label className="block text-sm font-medium mb-2 p-2">
+            or choose to use url *
+          </Label>
+        </div>
+
         <Input
           id="imageUrl"
-          placeholder="Enter image URL or use FileUpload below"
+          placeholder="Enter image URL"
           value={imageUrl}
           onChange={(e) => handleImageUrlChange(e.target.value)}
         />
         {previewImage && (
           <div className="mt-2">
-            <img src={previewImage} alt="Preview" className="w-32 h-32 object-cover rounded border" />
+            <img
+              src={previewImage}
+              alt="Preview"
+              className="w-32 h-32 object-cover rounded border"
+            />
           </div>
         )}
       </div>
 
-      {/* Colors Section */}
       <div>
         <Label>Available Colors</Label>
         <div className="flex gap-2 mb-2">
@@ -237,19 +280,27 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             onChange={(e) => setNewColor(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addColor())}
           />
-          <Button type="button" onClick={addColor} size="sm">Add</Button>
+          <Button type="button" onClick={addColor} size="sm">
+            Add
+          </Button>
         </div>
         <div className="flex flex-wrap gap-2">
           {formData.colors.map((color) => (
-            <Badge key={color} variant="secondary" className="flex items-center gap-1">
+            <Badge
+              key={color}
+              variant="secondary"
+              className="flex items-center gap-1"
+            >
               {color}
-              <X className="w-3 h-3 cursor-pointer" onClick={() => removeColor(color)} />
+              <X
+                className="w-3 h-3 cursor-pointer"
+                onClick={() => removeColor(color)}
+              />
             </Badge>
           ))}
         </div>
       </div>
 
-      {/* Sizes Section */}
       <div>
         <Label>Available Sizes</Label>
         <div className="flex gap-2 mb-2">
@@ -259,13 +310,22 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             onChange={(e) => setNewSize(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSize())}
           />
-          <Button type="button" onClick={addSize} size="sm">Add</Button>
+          <Button type="button" onClick={addSize} size="sm">
+            Add
+          </Button>
         </div>
         <div className="flex flex-wrap gap-2">
           {formData.sizes.map((size) => (
-            <Badge key={size} variant="secondary" className="flex items-center gap-1">
+            <Badge
+              key={size}
+              variant="secondary"
+              className="flex items-center gap-1"
+            >
               {size}
-              <X className="w-3 h-3 cursor-pointer" onClick={() => removeSize(size)} />
+              <X
+                className="w-3 h-3 cursor-pointer"
+                onClick={() => removeSize(size)}
+              />
             </Badge>
           ))}
         </div>
@@ -276,7 +336,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           Cancel
         </Button>
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Processing...' : (editingProduct ? 'Update Product' : 'Create Product')}
+          {isLoading
+            ? 'Processing...'
+            : editingProduct
+            ? 'Update Product'
+            : 'Create Product'}
         </Button>
       </div>
     </form>

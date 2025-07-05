@@ -1,14 +1,8 @@
-
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Paperclip, Image, FileText, Mic, X } from 'lucide-react';
 import { uploadFile } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-
-interface FileUploadProps {
-  onFileSelect: (files: FileData[]) => void;
-  disabled?: boolean;
-}
 
 export interface FileData {
   file: File;
@@ -17,14 +11,21 @@ export interface FileData {
   preview?: string;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled }) => {
+interface FileUploadProps {
+  onFileSelect: (files: FileData[]) => void;
+  disabled?: boolean;
+  onlyImages?: boolean; // NEW prop
+}
+
+const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled, onlyImages = false }) => {
   const { toast } = useToast();
   const [selectedFiles, setSelectedFiles] = useState<FileData[]>([]);
   const [uploading, setUploading] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const getFileType = (file: File): 'image' | 'pdf' | 'audio' | 'document' => {
+  const getFileType = (file: File): FileData['type'] => {
     if (file.type.startsWith('image/')) return 'image';
     if (file.type === 'application/pdf') return 'pdf';
     if (file.type.startsWith('audio/')) return 'audio';
@@ -38,7 +39,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled }) => {
     const fileDataArray: FileData[] = [];
 
     for (const file of fileArray) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      if (file.size > 10 * 1024 * 1024) {
         toast({
           title: "File too large",
           description: `${file.name} is larger than 10MB`,
@@ -58,7 +59,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled }) => {
         file,
         url: '',
         type: fileType,
-        preview
+        preview,
       });
     }
 
@@ -73,7 +74,6 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled }) => {
       const uploadedFiles: FileData[] = [];
 
       for (const fileData of selectedFiles) {
-        // Use 'ecommerce' bucket which exists in Supabase
         const uploadResult = await uploadFile(fileData.file, 'ecommerce');
         uploadedFiles.push({
           ...fileData,
@@ -138,7 +138,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled }) => {
         </div>
       )}
 
+      {/* Buttons: image + optional others */}
       <div className="flex space-x-2">
+        {/* Image Upload Button */}
         <Button
           type="button"
           variant="outline"
@@ -148,16 +150,21 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled }) => {
         >
           <Image className="w-4 h-4" />
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={disabled}
-        >
-          <Paperclip className="w-4 h-4" />
-        </Button>
 
+        {/* Extra file types (shown only if onlyImages is false) */}
+        {!onlyImages && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled}
+          >
+            <Paperclip className="w-4 h-4" />
+          </Button>
+        )}
+
+        {/* Hidden inputs */}
         <input
           ref={imageInputRef}
           type="file"
@@ -166,14 +173,16 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled }) => {
           onChange={(e) => handleFileSelect(e.target.files)}
           className="hidden"
         />
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf,.doc,.docx,.txt"
-          multiple
-          onChange={(e) => handleFileSelect(e.target.files)}
-          className="hidden"
-        />
+        {!onlyImages && (
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.txt,.mp3"
+            multiple
+            onChange={(e) => handleFileSelect(e.target.files)}
+            className="hidden"
+          />
+        )}
       </div>
     </div>
   );
