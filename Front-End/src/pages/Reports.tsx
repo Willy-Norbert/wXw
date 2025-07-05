@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown, BarChart3, PieChart, Eye } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getAllOrders } from '@/api/orders';
+import { getSellerOrders, getSellerProducts, getSellerStats } from '@/api/sellers';
 import api from '@/api/api';
 
 const Reports = () => {
@@ -24,19 +25,23 @@ const Reports = () => {
     }
   }, [user, navigate]);
 
+  const isSeller = user?.role?.toLowerCase() === 'seller';
+
+  // For sellers, use seller-specific API calls
   const { data: ordersData, isLoading: ordersLoading } = useQuery({
-    queryKey: ['orders'],
-    queryFn: () => getAllOrders()
+    queryKey: isSeller ? ['seller-orders'] : ['orders'],
+    queryFn: () => isSeller ? getSellerOrders() : getAllOrders()
   });
 
   const { data: usersData, isLoading: usersLoading } = useQuery({
     queryKey: ['users'],
-    queryFn: () => api.get('/auth/users')
+    queryFn: () => api.get('/auth/users'),
+    enabled: !isSeller // Only fetch users for admins
   });
 
   const { data: productsData, isLoading: productsLoading } = useQuery({
-    queryKey: ['products'],
-    queryFn: () => api.get('/products')
+    queryKey: isSeller ? ['seller-products'] : ['products'],
+    queryFn: () => isSeller ? getSellerProducts() : api.get('/products')
   });
 
   if (!user || user.role === 'buyer') {
@@ -57,10 +62,14 @@ const Reports = () => {
   const users = usersData?.data || [];
   const products = productsData?.data || [];
   
-  // Calculate real metrics from database
+  // Calculate metrics based on user role
   const totalRevenue = orders.reduce((sum: number, order: any) => sum + Number(order.totalPrice || 0), 0);
-  const totalCustomers = users.filter((u: any) => u.role === 'BUYER' || u.role === 'buyer').length;
-  const totalVendors = users.filter((u: any) => u.role === 'SELLER' || u.role === 'seller').length;
+  const totalCustomers = isSeller ? 
+    orders.filter((order: any, index: number, arr: any[]) => 
+      arr.findIndex((o: any) => o.customerEmail === order.customerEmail) === index
+    ).length : 
+    users.filter((u: any) => u.role === 'BUYER' || u.role === 'buyer').length;
+  const totalVendors = isSeller ? 1 : users.filter((u: any) => u.role === 'SELLER' || u.role === 'seller').length;
   const totalProducts = products.length;
   const totalOrders = orders.length;
   
@@ -88,7 +97,7 @@ const Reports = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="text-3xl font-bold bg-gradient-to-r text-purple-300 bg-clip-text text-transparent">
-            Reports & Analytics
+            {isSeller ? 'My Sales Reports & Analytics' : 'Reports & Analytics'}
           </h1>
         </div>
         
@@ -96,7 +105,9 @@ const Reports = () => {
           {/* Customers Report */}
           <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-800">Customer Analytics</CardTitle>
+              <CardTitle className="text-lg font-semibold text-gray-800">
+                {isSeller ? 'My Customers' : 'Customer Analytics'}
+              </CardTitle>
               
             </CardHeader>
             <CardContent className="space-y-4">
@@ -111,28 +122,32 @@ const Reports = () => {
             </CardContent>
           </Card>
 
-          {/* Vendor Report */}
-          <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-800">Vendor Performance</CardTitle>
-              
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold text-gray-900">{totalVendors}</div>
+          {/* Vendor Report - Hide for sellers */}
+          {!isSeller && (
+            <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="text-lg font-semibold text-gray-800">Vendor Performance</CardTitle>
                 
-              </div>
-              <div className="h-20 bg-gradient-to-r rounded-lg flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r bg-gray-200"></div>
-                <BarChart3 className="w-8 h-8 text-blue-500 relative z-10" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-3xl font-bold text-gray-900">{totalVendors}</div>
+                  
+                </div>
+                <div className="h-20 bg-gradient-to-r rounded-lg flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r bg-gray-200"></div>
+                  <BarChart3 className="w-8 h-8 text-blue-500 relative z-10" />
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Sales Report */}
           <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-all duration-300 md:col-span-2 xl:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-800">Sales Overview</CardTitle>
+              <CardTitle className="text-lg font-semibold text-gray-800">
+                {isSeller ? 'My Sales Overview' : 'Sales Overview'}
+              </CardTitle>
               
             </CardHeader>
             <CardContent className="space-y-4">
@@ -176,7 +191,9 @@ const Reports = () => {
           {/* Products Report */}
           <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-800">Product Analytics</CardTitle>
+              <CardTitle className="text-lg font-semibold text-gray-800">
+                {isSeller ? 'My Products' : 'Product Analytics'}
+              </CardTitle>
               
             </CardHeader>
             <CardContent className="space-y-4">
@@ -193,7 +210,9 @@ const Reports = () => {
           {/* Orders Report */}
           <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-lg font-semibold text-gray-800">Order Analytics</CardTitle>
+              <CardTitle className="text-lg font-semibold text-gray-800">
+                {isSeller ? 'My Orders' : 'Order Analytics'}
+              </CardTitle>
               
             </CardHeader>
             <CardContent className="space-y-4">
@@ -211,7 +230,9 @@ const Reports = () => {
         {/* Summary Section - Real Data */}
         <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-0 shadow-lg">
           <CardHeader>
-            <CardTitle className="text-xl font-semibold text-gray-800">Database Summary</CardTitle>
+            <CardTitle className="text-xl font-semibold text-gray-800">
+              {isSeller ? 'My Business Summary' : 'Database Summary'}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -225,7 +246,7 @@ const Reports = () => {
               </div>
               <div className="text-center p-4 bg-white rounded-lg shadow-sm">
                 <div className="text-2xl font-bold text-blue-600">{totalCustomers}</div>
-                <div className="text-sm text-gray-600">Total Customers</div>
+                <div className="text-sm text-gray-600">{isSeller ? 'My Customers' : 'Total Customers'}</div>
               </div>
               <div className="text-center p-4 bg-white rounded-lg shadow-sm">
                 <div className="text-2xl font-bold text-orange-600">{paidOrders.length}</div>

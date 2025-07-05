@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createProduct, updateProduct, deleteProduct, CreateProductData } from '@/api/products';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { uploadFile } from '@/lib/supabase';
 
 export const useProductMutations = (
   uploadImage: (file: File) => Promise<string>,
@@ -18,10 +19,11 @@ export const useProductMutations = (
     mutationFn: async (data: CreateProductData) => {
       let finalImageUrl = data.coverImage;
       
-      // If there's a selected file, upload it
+      // If there's a selected file, upload it to Supabase
       if (selectedFile) {
         try {
-          finalImageUrl = await uploadImage(selectedFile);
+          const uploadResult = await uploadFile(selectedFile, 'ecommerce');
+          finalImageUrl = uploadResult.url;
         } catch (error) {
           console.error('Image upload failed:', error);
           toast({ 
@@ -32,7 +34,7 @@ export const useProductMutations = (
           throw error;
         }
       }
-      // If there's an image URL but no file, use the URL
+      // If there's an image URL from FileUpload or manual URL input, use it
       else if (imageUrl) {
         finalImageUrl = imageUrl;
       }
@@ -54,10 +56,11 @@ export const useProductMutations = (
     mutationFn: async ({ id, data }: { id: string; data: Partial<CreateProductData> }) => {
       let finalImageUrl = data.coverImage;
       
-      // If there's a selected file, upload it
+      // If there's a selected file, upload it to Supabase
       if (selectedFile) {
         try {
-          finalImageUrl = await uploadImage(selectedFile);
+          const uploadResult = await uploadFile(selectedFile, 'ecommerce');
+          finalImageUrl = uploadResult.url;
         } catch (error) {
           console.error('Image upload failed:', error);
           toast({ 
@@ -68,7 +71,7 @@ export const useProductMutations = (
           throw error;
         }
       }
-      // If there's an image URL but no file, use the URL
+      // If there's an image URL from FileUpload or manual URL input, use it
       else if (imageUrl) {
         finalImageUrl = imageUrl;
       }
