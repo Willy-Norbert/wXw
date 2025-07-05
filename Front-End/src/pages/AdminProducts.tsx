@@ -48,7 +48,12 @@ const AdminProducts = () => {
   });
 
   const { createProductMutation, updateProductMutation, deleteProductMutation } = useProductMutations(
-    async () => uploadedImageUrl,
+    async (file: File) => {
+      if (uploadedImageUrl) {
+        return uploadedImageUrl;
+      }
+      throw new Error('No image URL available');
+    },
     null,
     uploadedImageUrl,
     () => {
@@ -66,7 +71,12 @@ const AdminProducts = () => {
 
   const handleCreateProduct = async (data) => {
     try {
-      await createProductMutation.mutateAsync(data);
+      // Use the uploaded image URL if available
+      const productData = {
+        ...data,
+        coverImage: uploadedImageUrl || data.coverImage
+      };
+      await createProductMutation.mutateAsync(productData);
       toast({ title: 'Success', description: 'Product created successfully!' });
       refetch();
       setIsFormOpen(false);
@@ -81,7 +91,12 @@ const AdminProducts = () => {
 
   const handleUpdateProduct = async (data) => {
     try {
-      await updateProductMutation.mutateAsync({ id: editingProduct.id, data });
+      // Use the uploaded image URL if available, otherwise keep existing
+      const productData = {
+        ...data,
+        coverImage: uploadedImageUrl || data.coverImage
+      };
+      await updateProductMutation.mutateAsync({ id: editingProduct.id, data: productData });
       toast({ title: 'Success', description: 'Product updated successfully!' });
       setEditingProduct(null);
       setIsFormOpen(false);

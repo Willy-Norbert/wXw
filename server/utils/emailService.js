@@ -550,6 +550,89 @@ export const sendOrderStatusUpdateEmail = async (toEmail, status, productName) =
 };
 
 // Send Delivery Status Update Email - FIXED
+// NEW: Send email notification to seller when order is confirmed
+export const sendSellerOrderNotificationEmail = async (orderData) => {
+  const { sellerEmail, sellerName, customerName, orderNumber, totalPrice, items, orderDate } = orderData;
+  
+  const itemsList = items.map(item => 
+    `• ${item.product.name} x${item.quantity} - ${(item.price * item.quantity).toLocaleString()} Rwf`
+  ).join('\n');
+
+  const mailOptions = {
+    from: 'nberitha12@gmail.com',
+    to: sellerEmail,
+    subject: `Order Confirmed - ${orderNumber} - Your Product Sold!`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">🎉 Order Confirmed!</h1>
+          <p style="color: white; margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Your product has been sold</p>
+        </div>
+        
+        <div style="background-color: white; padding: 40px 20px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          <h2 style="color: #374151; margin-top: 0;">Hello ${sellerName}!</h2>
+          
+          <div style="background-color: #ECFDF5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10B981;">
+            <p style="color: #065F46; margin: 0; font-weight: 500;">
+              Great news! An order containing your products has been confirmed and payment has been received.
+            </p>
+          </div>
+          
+          <p style="color: #6B7280; line-height: 1.6;">
+            The admin has confirmed payment for an order that includes your products. Please prepare the items for shipment.
+          </p>
+          
+          <div style="background-color: #F9FAFB; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #374151; margin-top: 0;">Order Details:</h3>
+            <p><strong>Order Number:</strong> ${orderNumber}</p>
+            <p><strong>Customer:</strong> ${customerName}</p>
+            <p><strong>Order Total:</strong> ${totalPrice.toLocaleString()} Rwf</p>
+            <p><strong>Order Date:</strong> ${new Date(orderDate).toLocaleDateString()}</p>
+            
+            <h4 style="margin-top: 20px; margin-bottom: 10px;">Your Items in This Order:</h4>
+            <pre style="white-space: pre-line; font-family: Arial, sans-serif; color: #4B5563;">${itemsList}</pre>
+          </div>
+          
+          <div style="background-color: #FEF3C7; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #92400E; margin-top: 0;">Next Steps:</h3>
+            <ul style="color: #78350F; line-height: 1.8; padding-left: 20px;">
+              <li>Prepare your products for shipment</li>
+              <li>Package items securely</li>
+              <li>Coordinate with delivery if needed</li>
+              <li>Update order status when shipped</li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://wxw.vercel.app'}/seller/orders" 
+               style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              View Order Details
+            </a>
+          </div>
+          
+          <p style="color: #6B7280; font-size: 14px; line-height: 1.6;">
+            Congratulations on your sale! If you have any questions, please contact our support team.
+          </p>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E5E7EB;">
+            <p style="color: #9CA3AF; font-size: 12px; text-align: center; margin: 0;">
+              This is an automated email. Please do not reply to this email.
+            </p>
+          </div>
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    await transport.sendMail(mailOptions);
+    console.log('✅ Seller order notification email sent to:', sellerEmail);
+  } catch (error) {
+    console.error('❌ Error sending seller order notification email:', error);
+    throw error;
+  }
+};
+
 export const sendDeliveryStatusUpdateEmail = async ({
   customerEmail,
   customerName,
