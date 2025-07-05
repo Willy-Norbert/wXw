@@ -6,8 +6,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { uploadFile } from '@/lib/supabase';
 
 export const useProductMutations = (
-  uploadImage: (file: File) => Promise<string>,
-  selectedFile: File | null,
   imageUrl: string,
   resetForm: () => void
 ) => {
@@ -19,23 +17,8 @@ export const useProductMutations = (
     mutationFn: async (data: CreateProductData) => {
       let finalImageUrl = data.coverImage;
       
-      // If there's a selected file, upload it to Supabase
-      if (selectedFile) {
-        try {
-          const uploadResult = await uploadFile(selectedFile, 'ecommerce');
-          finalImageUrl = uploadResult.url;
-        } catch (error) {
-          console.error('Image upload failed:', error);
-          toast({ 
-            title: t('common.error'), 
-            description: 'Image upload failed. Please try again.', 
-            variant: 'destructive' 
-          });
-          throw error;
-        }
-      }
-      // If there's an image URL from FileUpload or manual URL input, use it
-      else if (imageUrl) {
+      // Use the image URL from FileUpload or manual URL input
+      if (imageUrl) {
         finalImageUrl = imageUrl;
       }
       
@@ -56,23 +39,8 @@ export const useProductMutations = (
     mutationFn: async ({ id, data }: { id: string; data: Partial<CreateProductData> }) => {
       let finalImageUrl = data.coverImage;
       
-      // If there's a selected file, upload it to Supabase
-      if (selectedFile) {
-        try {
-          const uploadResult = await uploadFile(selectedFile, 'ecommerce');
-          finalImageUrl = uploadResult.url;
-        } catch (error) {
-          console.error('Image upload failed:', error);
-          toast({ 
-            title: t('common.error'), 
-            description: 'Image upload failed. Please try again.', 
-            variant: 'destructive' 
-          });
-          throw error;
-        }
-      }
-      // If there's an image URL from FileUpload or manual URL input, use it
-      else if (imageUrl) {
+      // Use the image URL from FileUpload or manual URL input
+      if (imageUrl) {
         finalImageUrl = imageUrl;
       }
       

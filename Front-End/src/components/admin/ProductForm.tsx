@@ -13,7 +13,6 @@ import { getAllUsers } from '@/api/users';
 interface ProductFormProps {
   editingProduct?: any;
   categories: any[];
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onUrlChange: (url: string) => void;
   previewImage: string;
   isLoading: boolean;
@@ -24,7 +23,6 @@ interface ProductFormProps {
 export const ProductForm: React.FC<ProductFormProps> = ({
   editingProduct,
   categories,
-  onFileChange,
   onUrlChange,
   previewImage,
   isLoading,
@@ -45,7 +43,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   const [newColor, setNewColor] = useState('');
   const [newSize, setNewSize] = useState('');
-  const [imageInputType, setImageInputType] = useState<'file' | 'url'>('file');
   const [imageUrl, setImageUrl] = useState('');
 
   // Fetch sellers for assignment dropdown
@@ -214,51 +211,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         />
       </div>
 
-      {/* Image Upload Section */}
+      {/* Image URL Section - Simple URL input only */}
       <div>
-        <Label>Product Image</Label>
-        <div className="space-y-3">
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant={imageInputType === 'file' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setImageInputType('file')}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Upload File
-            </Button>
-            <Button
-              type="button"
-              variant={imageInputType === 'url' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setImageInputType('url')}
-            >
-              <Link className="w-4 h-4 mr-2" />
-              Image URL
-            </Button>
+        <Label htmlFor="imageUrl">Product Image URL</Label>
+        <Input
+          id="imageUrl"
+          placeholder="Enter image URL or use FileUpload below"
+          value={imageUrl}
+          onChange={(e) => handleImageUrlChange(e.target.value)}
+        />
+        {previewImage && (
+          <div className="mt-2">
+            <img src={previewImage} alt="Preview" className="w-32 h-32 object-cover rounded border" />
           </div>
-
-          {imageInputType === 'file' ? (
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={onFileChange}
-            />
-          ) : (
-            <Input
-              placeholder="Enter image URL"
-              value={imageUrl}
-              onChange={(e) => handleImageUrlChange(e.target.value)}
-            />
-          )}
-
-          {previewImage && (
-            <div className="mt-2">
-              <img src={previewImage} alt="Preview" className="w-32 h-32 object-cover rounded border" />
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Colors Section */}
