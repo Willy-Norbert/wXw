@@ -149,9 +149,9 @@ export const DashboardHeader: React.FC = () => {
               )}
             </DropdownMenuContent>
              <div className=" text-center">
-                  <ChatBadge  className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                  
-                </div>
+                  <ChatBadge  className="w-6 h-6 mx-auto mb-2 text-gray-400" 
+                  />
+                  </div>
           </DropdownMenu>
 
           <LanguageSwitcher variant="dashboard" />
