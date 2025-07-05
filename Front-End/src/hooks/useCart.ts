@@ -81,7 +81,7 @@ export const useCart = () => {
         console.log('📤 Calling getCart with cartId:', cartIdToUse, 'for user type:', (user && user.id) ? 'authenticated' : 'anonymous');
         
         const response = await getCart(cartIdToUse);
-        const cartData = response?.data || null;
+        const cartData = response?.data?.data || response?.data || null;
 
         console.log('📦 Cart query response:', {
           cartExists: !!cartData,

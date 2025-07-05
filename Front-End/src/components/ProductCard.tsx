@@ -11,9 +11,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { createProductReview, getProductReviews } from '@/api/reviews';
 
+// Import supabase client to construct full image URL
+import { supabase } from '@/lib/supabase';  // Adjust this import path if necessary
+
 interface ProductCardProps {
   id: string;
-  image: string;
+  image: string; // can be full URL or storage path
   title: string;
   price: string;
   originalPrice?: string;
@@ -25,6 +28,16 @@ interface ProductCardProps {
     businessName?: string;
   };
 }
+
+// Helper to get full public URL for an image stored in Supabase storage
+const getPublicImageUrl = (path: string): string => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path; // Already a full URL
+  // Build the URL based on your Supabase storage public URL and bucket name
+  // Adjust bucket name if different
+  const bucketName = 'ecommerce';
+  return supabase.storage.from(bucketName).getPublicUrl(path).data.publicUrl || '';
+};
 
 const ProductCard = ({ 
   id, 
@@ -166,7 +179,7 @@ const ProductCard = ({
       <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 group hover:scale-105">
         <div className="relative overflow-hidden rounded-t-xl">
           <img 
-            src={image || '/placeholder.svg'} 
+            src={getPublicImageUrl(image) || '/placeholder.svg'} 
             alt={title}
             className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
             onError={(e) => {

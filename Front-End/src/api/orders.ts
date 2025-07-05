@@ -14,6 +14,7 @@ export interface CartItem {
 }
 
 export interface Cart {
+  data: Cart;
   id: number;
   userId?: number;
   items: CartItem[];

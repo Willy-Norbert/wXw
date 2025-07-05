@@ -11,6 +11,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 import CartBadge from './CartBadge';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import SellersDropdown from './SellersDropdown';
+import ChatBadge from './ChatBadge';
 
 const Header = () => {
   const { user, logout } = useContext(AuthContext);
@@ -106,7 +107,7 @@ const Header = () => {
                   </Link>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="text-gray-700 hover:text-purple-600 transition-colors">
+                      <Button variant="ghost" className="text-gray-700 text-md hover:text-purple-600 transition-colors">
                         Sellers
                       </Button>
                     </DropdownMenuTrigger>
@@ -140,13 +141,10 @@ const Header = () => {
                   <CartBadge />
 
                   {/* Chat Icon - Visible only to Admin or Seller */}
-                  {user && (user.role.toLowerCase() === 'admin' || user.role.toLowerCase() === 'seller') && (
-                    <Link to="/community-chat" onClick={handleChatClick}>
-                      <Button variant="ghost" size="icon" className="text-gray-700 hover:text-purple-600">
-                        <MessageSquare className="w-5 h-5" />
-                      </Button>
-                    </Link>
-                  )}
+                {user && (user.role.toLowerCase() === 'admin' || user.role.toLowerCase() === 'seller') && (
+                <ChatBadge />
+              )}
+
 
                   <LanguageSwitcher variant="header" />
 

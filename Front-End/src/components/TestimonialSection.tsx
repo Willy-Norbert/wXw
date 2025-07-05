@@ -17,64 +17,11 @@ const TestimonialSection = () => {
     staleTime: 300000, // 5 minutes
   });
 
+  // Get reviews from API response (assuming data structure has data array)
   const reviews = reviewsData?.data || [];
 
-  // Fallback testimonials if no reviews or loading
-  const fallbackTestimonials = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      rating: 5,
-      comment: "Amazing products and fast delivery! Will definitely shop here again.",
-      product: "Premium Quality"
-    },
-    {
-      id: 2,
-      name: "Mike Chen",
-      rating: 5,
-      comment: "Excellent customer service and great value for money.",
-      product: "Great Service"
-    },
-    {
-      id: 3,
-      name: "Emma Davis",
-      rating: 5,
-      comment: "Love the variety of products available. Highly recommended!",
-      product: "Wide Selection"
-    },
-    {
-      id: 4,
-      name: "John Smith",
-      rating: 5,
-      comment: "Outstanding quality and reasonable prices. Very satisfied with my purchase.",
-      product: "Excellent Value"
-    },
-    {
-      id: 5,
-      name: "Maria Garcia",
-      rating: 5,
-      comment: "Fast shipping and great customer support. Will order again soon!",
-      product: "Fast Delivery"
-    },
-    {
-      id: 6,
-      name: "David Wilson",
-      rating: 5,
-      comment: "High-quality products and professional service. Highly recommended!",
-      product: "Professional Service"
-    }
-  ];
-
-  // Use real reviews if available, otherwise fallback
-  const displayTestimonials = reviews.length > 0 
-    ? reviews.slice(0, 12).map(review => ({
-        id: review.id,
-        name: review.user.name,
-        rating: review.rating,
-        comment: review.comment,
-        product: "Verified Purchase"
-      }))
-    : fallbackTestimonials;
+  // Example filter: only 5-star reviews (remove or change as needed)
+  const filteredReviews = reviews.filter(review => review.rating === 5);
 
   if (error) {
     console.error('Error loading reviews for testimonials:', error);
@@ -87,13 +34,12 @@ const TestimonialSection = () => {
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             What Our Customers Say
           </h2>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-  {reviews.length > 0 
-    ? `Read what our ${reviews.length} satisfied customers have to say about their experience`
-    : "Discover why customers love shopping with us"
-  }
-</p>
-
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            {filteredReviews.length > 0 
+              ? `Read what our ${filteredReviews.length} satisfied customers have to say about their experience`
+              : "No reviews available at the moment."
+            }
+          </p>
         </div>
 
         <div className="max-w-6xl mx-auto">
@@ -110,7 +56,7 @@ const TestimonialSection = () => {
               delay: 4000,
               disableOnInteraction: false,
             }}
-            loop={true}
+            loop={filteredReviews.length > 3} // loop only if more than 3 reviews
             breakpoints={{
               640: {
                 slidesPerView: 1,
@@ -127,21 +73,21 @@ const TestimonialSection = () => {
             }}
             className="testimonials-swiper"
           >
-            {displayTestimonials.map((testimonial) => (
-              <SwiperSlide key={testimonial.id}>
+            {filteredReviews.slice(0, 12).map((review) => (
+              <SwiperSlide key={review.id}>
                 <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow h-full">
                   <div className="flex items-center mb-4">
                     <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
                       <User className="w-6 h-6 text-purple-600" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
+                      <h4 className="font-semibold text-gray-900">{review.user.name}</h4>
                       <div className="flex items-center">
                         {[...Array(5)].map((_, i) => (
                           <Star 
                             key={i} 
                             className={`w-4 h-4 ${
-                              i < testimonial.rating 
+                              i < review.rating 
                                 ? 'text-yellow-400 fill-current' 
                                 : 'text-gray-300'
                             }`} 
@@ -150,9 +96,9 @@ const TestimonialSection = () => {
                       </div>
                     </div>
                   </div>
-                  <p className="text-gray-600 mb-4 line-clamp-3">"{testimonial.comment}"</p>
+                  <p className="text-gray-600 mb-4 line-clamp-3">"{review.comment}"</p>
                   <div className="text-sm text-purple-600 font-medium">
-                    {testimonial.product}
+                    Verified Purchase
                   </div>
                 </div>
               </SwiperSlide>
@@ -160,7 +106,7 @@ const TestimonialSection = () => {
           </Swiper>
         </div>
 
-        {!isLoading && reviews.length === 0 && (
+        {!isLoading && filteredReviews.length === 0 && (
           <div className="text-center mt-8">
             <p className="text-gray-500 text-sm">
               Be the first to leave a review and help other customers!

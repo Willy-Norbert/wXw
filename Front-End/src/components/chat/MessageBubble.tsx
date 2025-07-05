@@ -118,7 +118,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isCurrentUser })
         <div
           className={`px-4 py-2 rounded-lg shadow-sm ${
             isCurrentUser
-              ? 'bg-purple-500 text-white'
+              ? 'bg-purple-500 text-gray-700'
               : 'bg-white border border-gray-200'
           }`}
         >

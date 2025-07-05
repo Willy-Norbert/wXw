@@ -14,7 +14,7 @@ const reviewRouter = express.Router({ mergeParams: true });
 // Routes for specific product reviews
 reviewRouter.route('/')
   .get(getReviews)
-  .post(protect, createReview);
+  .post(createReview);
 
 reviewRouter.route('/:id')
   .put(protect, updateReview)

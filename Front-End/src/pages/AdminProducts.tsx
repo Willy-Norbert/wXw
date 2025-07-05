@@ -1,5 +1,4 @@
-
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { ProductTable } from '@/components/admin/ProductTable';
 import { ProductForm } from '@/components/admin/ProductForm';
@@ -14,67 +13,52 @@ import { useProductMutations } from '@/hooks/useProductMutations';
 import { useQuery } from '@tanstack/react-query';
 import { getProducts, getSellerProducts } from '@/api/products';
 import { getCategories } from '@/api/categories';
-import { useImageUpload } from '@/hooks/useImageUpload';
 import { useToast } from '@/components/ui/use-toast';
+import FileUpload, { FileData } from '@/components/chat/FileUpload';
+
+
 const AdminProducts = () => {
   const { t } = useLanguage();
   const { user } = useContext(AuthContext);
   const { toast } = useToast();
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
+
   const userRole = user?.role?.toLowerCase();
   const isSeller = userRole === 'seller';
-  const isAdmin = userRole === 'admin';
 
-  console.log('🛍️ AdminProducts: User role:', userRole, 'Is Seller:', isSeller);
-
-  // Check if seller is approved
   const sellerNotApproved = isSeller && (user?.sellerStatus !== 'ACTIVE' || !user?.isActive);
+  if (sellerNotApproved) return <SellerBlocked />;
 
-  // If seller is not approved, show blocked page
-  if (sellerNotApproved) {
-    return <SellerBlocked />;
-  }
-
-  // Fetch products based on user role
   const { data: products = [], isLoading, refetch } = useQuery({
     queryKey: isSeller ? ['seller-products'] : ['products'],
-    queryFn: () => {
-      console.log('📦 Fetching products for role:', userRole);
-      return isSeller ? getSellerProducts() : getProducts();
-    },
-    select: (response) => {
-      const productData = response.data || [];
-      console.log('✅ Products fetched:', productData.length, 'items');
-      return productData;
-    }
+    queryFn: () => (isSeller ? getSellerProducts() : getProducts()),
+    select: (res) => res.data || [],
   });
 
-  // Fetch categories for the form
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: getCategories,
-    select: (response) => response.data || []
+    select: (res) => res.data || [],
   });
 
-  // Image upload hook
-  const { uploadImage, selectedFile, setSelectedFile, imageUrl, setImageUrl, previewImage, resetImageUpload } = useImageUpload();
-
-  // Product mutations with improved error handling
   const { createProductMutation, updateProductMutation, deleteProductMutation } = useProductMutations(
-    uploadImage,
-    selectedFile,
-    imageUrl,
+    async () => uploadedImageUrl,
+    null,
+    uploadedImageUrl,
     () => {
-      resetImageUpload();
+      setUploadedImageUrl('');
+      setPreviewImage(null);
       setIsFormOpen(false);
       setEditingProduct(null);
     }
   );
 
-  // Filter products based on search term
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.category?.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -82,45 +66,31 @@ const AdminProducts = () => {
 
   const handleCreateProduct = async (data) => {
     try {
-      console.log('➕ Creating product:', data);
       await createProductMutation.mutateAsync(data);
-      console.log('✅ Product creation successful');
-      toast({
-        title: "Success",
-        description: "Product created successfully!",
-      });
-      setIsFormOpen(false);
-      resetImageUpload();
+      toast({ title: 'Success', description: 'Product created successfully!' });
       refetch();
+      setIsFormOpen(false);
     } catch (error) {
-      console.error('❌ Error creating product:', error);
       toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to create product",
-        variant: "destructive"
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to create product',
+        variant: 'destructive',
       });
     }
   };
 
   const handleUpdateProduct = async (data) => {
     try {
-      console.log('🔄 Updating product:', editingProduct.id, data);
       await updateProductMutation.mutateAsync({ id: editingProduct.id, data });
-      console.log('✅ Product update successful');
-      toast({
-        title: "Success",
-        description: "Product updated successfully!",
-      });
+      toast({ title: 'Success', description: 'Product updated successfully!' });
       setEditingProduct(null);
       setIsFormOpen(false);
-      resetImageUpload();
       refetch();
     } catch (error) {
-      console.error('❌ Error updating product:', error);
       toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to update product",
-        variant: "destructive"
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to update product',
+        variant: 'destructive',
       });
     }
   };
@@ -128,27 +98,20 @@ const AdminProducts = () => {
   const handleDeleteProduct = async (productId) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
-        console.log('🗑️ Deleting product:', productId);
         await deleteProductMutation.mutateAsync(productId);
-        console.log('✅ Product deletion successful');
-        toast({
-          title: "Success",
-          description: "Product deleted successfully!",
-        });
+        toast({ title: 'Success', description: 'Product deleted successfully!' });
         refetch();
       } catch (error) {
-        console.error('❌ Error deleting product:', error);
         toast({
-          title: "Error",
-          description: error.response?.data?.message || "Failed to delete product",
-          variant: "destructive"
+          title: 'Error',
+          description: error.response?.data?.message || 'Failed to delete product',
+          variant: 'destructive',
         });
       }
     }
   };
 
   const handleEditProduct = (product) => {
-    console.log('✏️ Editing product:', product.id);
     setEditingProduct(product);
     setIsFormOpen(true);
   };
@@ -156,20 +119,21 @@ const AdminProducts = () => {
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setEditingProduct(null);
-    resetImageUpload();
+    setUploadedImageUrl('');
+    setPreviewImage(null);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setImageUrl('');
+  const handleFileSelect = (files: FileData[]) => {
+    const imageFile = files.find(f => f.type === 'image');
+    if (imageFile) {
+      setUploadedImageUrl(imageFile.url);
+      setPreviewImage(imageFile.preview || imageFile.url);
     }
   };
 
   const handleUrlChange = (url: string) => {
-    setImageUrl(url);
-    setSelectedFile(null);
+    setUploadedImageUrl(url);
+    setPreviewImage(url);
   };
 
   return (
@@ -185,26 +149,23 @@ const AdminProducts = () => {
           </Button>
         </div>
 
-        {/* Search */}
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input 
-            placeholder={t('products.search_placeholder')} 
+          <Input
+            placeholder={t('products.search_placeholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-gray-50 border-gray-200" 
+            className="pl-10 bg-gray-50 border-gray-200"
           />
         </div>
 
-        {/* Product Table */}
-        <ProductTable 
+        <ProductTable
           products={filteredProducts}
           onEdit={handleEditProduct}
           onDelete={handleDeleteProduct}
           userRole={userRole}
         />
 
-        {/* Product Form Modal */}
         {isFormOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -217,13 +178,18 @@ const AdminProducts = () => {
                 <ProductForm
                   editingProduct={editingProduct}
                   categories={categories}
-                  onFileChange={handleFileChange}
                   onUrlChange={handleUrlChange}
-                  previewImage={previewImage}
-                  isLoading={createProductMutation.isPending || updateProductMutation.isPending}
                   onSubmit={editingProduct ? handleUpdateProduct : handleCreateProduct}
                   onCancel={handleCloseForm}
-                />
+                  previewImage={previewImage}
+                  isLoading={createProductMutation.isPending || updateProductMutation.isPending} onFileChange={function (e: React.ChangeEvent<HTMLInputElement>): void {
+                    throw new Error('Function not implemented.');
+                  } }                />
+
+                {/* 👇 FileUpload inserted below the form */}
+                <div className="mt-4">
+                  <FileUpload onFileSelect={handleFileSelect} />
+                </div>
               </CardContent>
             </Card>
           </div>

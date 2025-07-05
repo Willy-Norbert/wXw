@@ -1,6 +1,6 @@
 
 import express from 'express';
-import { getChatMessages, createChatMessage, updateChatMessage, deleteChatMessage } from '../controllers/chatController.js';
+import { getChatMessages, createChatMessage, updateChatMessage, deleteChatMessage,getUnreadMessageCount,markChatMessagesAsRead  } from '../controllers/chatController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -17,5 +17,9 @@ router.route('/messages')
 router.route('/messages/:id')
   .put(updateChatMessage)
   .delete(deleteChatMessage);
+
+router.get('/unread-count', protect, getUnreadMessageCount);
+router.patch('/mark-read', protect, markChatMessagesAsRead);
+
 
 export default router;

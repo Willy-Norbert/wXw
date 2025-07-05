@@ -229,8 +229,10 @@ model OrderItem {
   id        Int      @id @default(autoincrement())
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId   Int
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
-  productId Int
+
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productId Int?     // <-- make it optional
+
   quantity  Int      @db.SmallInt
   price     Decimal  @db.Decimal(10, 2)
   color     String?  @db.VarChar(50)
@@ -242,6 +244,7 @@ model OrderItem {
   @@index([productId])
   @@map("order_items")
 }
+
 
 model Notification {
   id             Int             @id @default(autoincrement())
@@ -272,6 +275,7 @@ model ChatMessage {
   messageType MessageType  @default(TEXT)
   isEdited    Boolean      @default(false)
   editedAt    DateTime?
+  isRead      Boolean      @default(false)   // ✅ This line is good
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -281,6 +285,8 @@ model ChatMessage {
   @@index([createdAt])
   @@map("chat_messages")
 }
+
+
 
 model ChatAttachment {
   id          Int          @id @default(autoincrement())

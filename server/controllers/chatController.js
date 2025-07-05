@@ -158,3 +158,46 @@ export const deleteChatMessage = asyncHandler(async (req, res) => {
 
   res.status(200).json({ message: 'Message deleted successfully' });
 });
+
+// @desc    Get unread message count for current user
+// @route   GET /api/chat/unread-count
+// @access  Private (Admin/Seller only)
+export const getUnreadMessageCount = asyncHandler(async (req, res) => {
+  const userRole = req.user.role.toLowerCase();
+  
+  if (userRole !== 'admin' && userRole !== 'seller') {
+    res.status(403);
+    throw new Error('Only admins and sellers can check unread messages');
+  }
+
+  const count = await prisma.chatMessage.count({
+    where: {
+      isRead: false,
+      NOT: {
+        userId: req.user.id, // Don't count own messages
+      },
+    },
+  });
+
+  res.status(200).json({ count });
+});
+// @desc    Mark all unread messages as read (for current user)
+// @route   PATCH /api/chat/mark-read
+// @access  Private (Admin/Seller)
+export const markChatMessagesAsRead = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+
+  await prisma.chatMessage.updateMany({
+    where: {
+      isRead: false,
+      NOT: {
+        userId: userId, // don't mark own messages
+      },
+    },
+    data: {
+      isRead: true,
+    },
+  });
+
+  res.status(200).json({ message: 'Messages marked as read' });
+});

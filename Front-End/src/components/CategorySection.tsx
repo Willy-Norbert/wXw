@@ -109,7 +109,7 @@ const CategorySection = () => {
                     {/* Background image overlay */}
                     <div 
                       className="absolute inset-0 bg-cover bg-center opacity-20 group-hover:opacity-30 transition-opacity duration-300"
-                      style={{ backgroundImage: `url(${defaultCat.image})` }}
+                      
                     />
                     
                     {/* Content */}
@@ -130,7 +130,7 @@ const CategorySection = () => {
                         <img 
                           src={defaultCat.image} 
                           alt={category.name}
-                          className="w-12 h-12 object-cover rounded-lg opacity-80"
+                          className="w-24 h-24 object-cover rounded-lg opacity-80"
                         />
                       </div>
                     </div>

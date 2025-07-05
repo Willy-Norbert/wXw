@@ -322,7 +322,7 @@ const Checkout = () => {
                     checked={sameAsBilling}
                     onCheckedChange={handleSameAsBillingChange}
                   />
-                  <Label htmlFor="same-address" className="text-purple-600">Same as billing address</Label>
+                  <Label htmlFor="same-address" className="text-purple-600">Same as customer address </Label>
                 </div>
 
                 {!sameAsBilling && (

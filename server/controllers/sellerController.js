@@ -2,7 +2,7 @@ import asyncHandler from 'express-async-handler';
 import prisma from '../prismaClient.js';
 import { notify } from '../utils/notify.js';
 import bcrypt from 'bcryptjs';
-import {sendSellerWelcomeEmail} from '../utils/emailService.js';
+import {sendSellerWelcomeEmail,sendSellerStatusEmail} from '../utils/emailService.js';
 
 // Submit seller request
 export const submitSellerRequest = asyncHandler(async (req, res) => {
@@ -177,6 +177,18 @@ export const updateSellerStatus = asyncHandler(async (req, res) => {
     }
   });
 
+  // Send email notification to seller
+  try { 
+    await sendSellerStatusEmail({
+      email: updatedSeller.email,
+      name: updatedSeller.name,
+      status: updatedSeller.sellerStatus,
+      permissions: updatedSeller.sellerPermissions ? JSON.parse(updatedSeller.sellerPermissions) : null
+    });
+  } catch (emailError) {
+    console.error('Error sending seller status email:', emailError);
+    // Don't fail if email fails
+  }
   // Send notification to seller
   try {
     await notify({
@@ -191,6 +203,7 @@ export const updateSellerStatus = asyncHandler(async (req, res) => {
 
   console.log('Seller status updated successfully');
   res.json(updatedSeller);
+
 });
 
 // Get seller's products (Seller only)

@@ -40,7 +40,7 @@ export const sendWelcomeEmail = async (userData) => {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:8080'}/products" 
+            <a href="${process.env.FRONTEND_URL || 'https://wxw.vercel.app'}/products" 
                style="background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
               Start Shopping Now
             </a>
@@ -101,7 +101,7 @@ export const sendSellerWelcomeEmail = async (userData) => {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:8080'}/login" 
+            <a href="${process.env.FRONTEND_URL || 'https://wxw.vercel.app'}/login" 
                style="background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
               Visit Your Seller Dashboard
             </a>
@@ -170,7 +170,7 @@ export const sendSellerStatusEmail = async (sellerData, status) => {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:8080'}/login" 
+              <a href="${process.env.FRONTEND_URL || 'https://wxw.vercel.app'}/login" 
                  style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
                 Access Seller Dashboard
               </a>

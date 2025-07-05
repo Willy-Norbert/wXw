@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import ChatBadge from '../ChatBadge';
 
 export const DashboardHeader: React.FC = () => {
   const { user, logout } = useContext(AuthContext);
@@ -147,6 +148,10 @@ export const DashboardHeader: React.FC = () => {
                 </div>
               )}
             </DropdownMenuContent>
+             <div className=" text-center">
+                  <ChatBadge  className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                  
+                </div>
           </DropdownMenu>
 
           <LanguageSwitcher variant="dashboard" />

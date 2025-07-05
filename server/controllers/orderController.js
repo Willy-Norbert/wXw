@@ -1224,7 +1224,7 @@ export const confirmOrderPayment = asyncHandler(async (req, res) => {
         totalPrice: order.totalPrice,
         items: order.items,
         shippingAddress: order.shippingAddress,
-        paymentCode: order.paymentCode || '0787778889'
+        paymentCode: order.paymentCode || '0784720984'
       });
       console.log(' Payment confirmation email sent to:', customerEmail);
     } catch (emailError) {

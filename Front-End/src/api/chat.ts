@@ -58,3 +58,11 @@ export const deleteChatMessage = async (messageId: number) => {
   const response = await api.delete(`/chat/messages/${messageId}`);
   return response.data;
 };
+ export const getUnreadMessageCount = async () => {
+  const response = await api.get('/chat/unread-count');
+  return response.data; // should return { count: number }
+};
+export const markMessagesAsRead = async () => {
+  const response = await api.patch('/chat/mark-read');
+  return response.data;
+};

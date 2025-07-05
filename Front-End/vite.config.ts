@@ -12,6 +12,8 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    // ✅ Add this line to support reloading subroutes like /cart, /checkout, etc.
+    historyApiFallback: true,
   },
   plugins: [
     react(),
