@@ -14,7 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getProducts, getSellerProducts } from '@/api/products';
 import { getCategories } from '@/api/categories';
 import { useToast } from '@/components/ui/use-toast';
-
+import FileUpload, { FileData } from '@/components/chat/FileUpload';
 
 
 const AdminProducts = () => {
@@ -131,6 +131,13 @@ const AdminProducts = () => {
     setPreviewImage(null);
   };
 
+  const handleFileSelect = (files: FileData[]) => {
+    const imageFile = files.find(f => f.type === 'image');
+    if (imageFile) {
+      setUploadedImageUrl(imageFile.url);
+      setPreviewImage(imageFile.preview || imageFile.url);
+    }
+  };
 
   const handleUrlChange = (url: string) => {
     setUploadedImageUrl(url);
@@ -176,15 +183,25 @@ const AdminProducts = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ProductForm
-                  editingProduct={editingProduct}
-                  categories={categories}
-                  onUrlChange={handleUrlChange}
-                  onSubmit={editingProduct ? handleUpdateProduct : handleCreateProduct}
-                  onCancel={handleCloseForm}
-                  previewImage={previewImage}
-                  isLoading={createProductMutation.isPending || updateProductMutation.isPending}
-                />
+                <div className="space-y-4">
+                  <ProductForm
+                    editingProduct={editingProduct}
+                    categories={categories}
+                    onUrlChange={handleUrlChange}
+                    onSubmit={editingProduct ? handleUpdateProduct : handleCreateProduct}
+                    onCancel={handleCloseForm}
+                    previewImage={previewImage}
+                    isLoading={createProductMutation.isPending || updateProductMutation.isPending}
+                  />
+
+                  {/* FileUpload for Supabase integration */}
+                  <div className="border-t pt-4">
+                    <label className="block text-sm font-medium mb-2">
+                      Upload Product Image (Supabase)
+                    </label>
+                    <FileUpload onFileSelect={handleFileSelect} />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
