@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { X, Upload, Link } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getAllUsers } from '@/api/users';
 
@@ -216,7 +216,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         <Label htmlFor="imageUrl">Product Image URL</Label>
         <Input
           id="imageUrl"
-          placeholder="Enter image URL or use FileUpload below"
+          placeholder="Enter product image URL"
           value={imageUrl}
           onChange={(e) => handleImageUrlChange(e.target.value)}
         />
